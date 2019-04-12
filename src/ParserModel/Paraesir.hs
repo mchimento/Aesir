@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -w #-}
 {-# OPTIONS -fglasgow-exts -cpp #-}
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns #-}
-module Paraesir where
-import Absaesir
-import Lexaesir
+module ParserModel.Paraesir where
+import ParserModel.Absaesir
+import ParserModel.Lexaesir
 import ErrM
 import qualified Data.Array as Happy_Data_Array
 import qualified GHC.Exts as Happy_GHC_Exts
@@ -42,10 +42,10 @@ happyIn88 x = Happy_GHC_Exts.unsafeCoerce# x
 happyOut88 :: (HappyAbsSyn ) -> (Symbols)
 happyOut88 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut88 #-}
-happyIn89 :: (AbsPPDATE) -> (HappyAbsSyn )
+happyIn89 :: (AbsModel) -> (HappyAbsSyn )
 happyIn89 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyIn89 #-}
-happyOut89 :: (HappyAbsSyn ) -> (AbsPPDATE)
+happyOut89 :: (HappyAbsSyn ) -> (AbsModel)
 happyOut89 x = Happy_GHC_Exts.unsafeCoerce# x
 {-# INLINE happyOut89 #-}
 happyIn90 :: (Imports) -> (HappyAbsSyn )
@@ -792,7 +792,7 @@ happyReduction_86 (happy_x_6 `HappyStk`
 	case happyOut149 happy_x_5 of { happy_var_5 -> 
 	case happyOut150 happy_x_6 of { happy_var_6 -> 
 	happyIn89
-		 (AbsPPDATE happy_var_1 happy_var_2 happy_var_3 happy_var_4 happy_var_5 happy_var_6
+		 (AbsModel happy_var_1 happy_var_2 happy_var_3 happy_var_4 happy_var_5 happy_var_6
 	) `HappyStk` happyRest}}}}}}
 
 happyReduce_87 = happyReduce 4# 5# happyReduction_87
@@ -2433,7 +2433,7 @@ happyReturn1 = \a tks -> (returnM) a
 happyError' :: () => [(Token)] -> Err a
 happyError' = happyError
 
-pAbsPPDATE tks = happySomeParser where
+pAbsModel tks = happySomeParser where
   happySomeParser = happyThen (happyParse 0# tks) (\x -> happyReturn (happyOut89 x))
 
 pImports tks = happySomeParser where
