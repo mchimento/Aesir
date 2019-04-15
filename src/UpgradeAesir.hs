@@ -85,7 +85,9 @@ genIProp (Abs.IProp id jml) =
 -----------
 
 genModel :: Abs.Model -> UpgradeModel Model
-genModel = undefined
+genModel (Abs.Model ctxt) =
+ do ctxt' <- getCtxt ctxt TopLevel    
+    return (Model ctxt')
 
 -- Context --
 
@@ -626,10 +628,6 @@ getForeach (Abs.ForeachesDef args ctxt Abs.ForeachesNil) id =
 ---------------
 
 genTemplates :: Abs.Templates -> UpgradeModel Templates
-genTemplates = undefined
-
-{-
-genTemplates :: Abs.Templates -> UpgradeModel Templates
 genTemplates Abs.TempsNil   = return TempNil
 genTemplates (Abs.Temps xs) = 
  do xs <- sequence $ map genTemplate xs
@@ -672,10 +670,10 @@ genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
 
 hasReferenceType :: [Args] -> String -> UpgradeModel [Args]
 hasReferenceType xs id = 
- case filterReferenceTypes xs of
+ case filterRefTypes xs of
       [] -> fail $ "Error: The template " ++ id ++ " does not have any reference type as argument.\n"
       _  -> return xs
--}
+
 -----------------
 -- CInvariants --
 -----------------
@@ -731,7 +729,7 @@ getJML :: Abs.JML -> String -> Writer String JMLExp
 getJML jml str = 
  let jml' = printTree jml in
  case ParJML.parse jml' of
-      Bad s -> do tell $ "Error: Parse error on the " ++ str
+      Bad s -> do tell $ "Error: JML syntax error on the " ++ str
                   return "Error: Parse error "
       Ok _  -> return jml' 
 
