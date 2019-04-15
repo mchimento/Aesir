@@ -43,6 +43,10 @@ partitionErr (x:xs) = let (ls,rs) = partitionErr xs
                              Ok a  -> (ls,x:rs)
                              Bad s -> (x:ls,rs)
 
+joinBad :: Err a -> String -> String
+joinBad (Bad s1) s2 = s1 ++ s2
+joinBad _ _         = error "failure: joinBad \n"
+
 fromOK :: Err a -> a
 fromOK (Ok a) = a
 

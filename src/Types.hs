@@ -52,6 +52,9 @@ type MethodName = String
 
 data IProp = IProp Id JMLExp deriving(Eq,Show)
 
+getIdIprop :: IProp -> Id
+getIdIprop (IProp id _) = id 
+
 -----------
 -- Model --
 -----------
@@ -219,7 +222,6 @@ data TriggersInfo =
     , tiMN      :: MethodName --method_name
     , tiCI      :: ClassInfo --class_type
     , tiCVar    :: String --class_variable_name
-    , tiTrvar   :: TriggerVariation
     , tiBinds   :: [Bind]
     , tiTrDef   :: Maybe TriggerDef
     , tiScope   :: Scope
@@ -302,11 +304,6 @@ data Property = Property
   , pTransitions :: Transitions
   , pProps       :: Property
   } | PNIL 
-    | PINIT { piName  :: PropertyName 
-            , tmpId   :: Id 
-            , bounds  :: Id
-            , piProps :: Property
-            }
          deriving (Show, Eq,Read)
 
 
@@ -345,50 +342,23 @@ showWhere [] = ""
 showWhere xs = " where { " ++ xs ++ " }"
 
 data CompoundTrigger =
-   NormalEvent Binding Id [Bind] TriggerVariation
- | ClockEvent Id Timeout Integer
+   NormalEvent Binding Id [Bind]
  | OnlyId Id
  | OnlyIdPar Id
  | Collection TriggerList
   deriving (Eq,Read)
 
 updCEne :: CompoundTrigger -> Binding -> CompoundTrigger
-updCEne (NormalEvent bind id bs tv) bind' = NormalEvent bind' id bs tv
+updCEne (NormalEvent bind id bs) bind' = NormalEvent bind' id bs
 
 instance Show CompoundTrigger where
- show (NormalEvent b id binds tv) = show b ++ "." ++ id ++ "(" ++ intercalate "," (map show binds) ++ ")" ++ show tv
- show (ClockEvent id t n)         = id ++ show t ++ show n
+ show (NormalEvent b id binds) = show b ++ "." ++ id ++ "(" ++ intercalate "," (map show binds) ++ ")"
  show (OnlyId id)                 = id
  show (OnlyIdPar id)              = id ++ "()"
  show (Collection tls)            = show tls
 
-getCTVariation :: CompoundTrigger -> TriggerVariation
-getCTVariation (NormalEvent _ _ _ tv) = tv
-
 getCTArgs :: CompoundTrigger -> [Bind]
-getCTArgs (NormalEvent _ _ bs _) = bs
-
-data Timeout = At | AtRep
-  deriving (Eq,Read)
-
-instance Show Timeout where
- show At    = "@"
- show AtRep = "@%"
-
-data TriggerVariation =
-   EVEntry
- | EVExit [Bind]
- | EVThrow [Bind]
- | EVHadle [Bind]
- | EVNil--Added to simplify search of triggers during the translation
-  deriving (Eq,Read)
-
-instance Show TriggerVariation where
- show EVEntry      = "entry"
- show (EVExit rs)  = "exit(" ++ concatMap show rs ++ ")" 
- show (EVThrow rs) = "throw(" ++ concatMap show rs ++ ")"
- show (EVHadle rs) = "handle(" ++ concatMap show rs ++ ")"
- show EVNil        = ""
+getCTArgs (NormalEvent _ _ bs) = bs
 
 data TriggerList =
    CECollection [CEElement] WhereClause
@@ -458,12 +428,12 @@ updateMethodCallName :: TriggerDef -> MethodName -> TriggerDef
 updateMethodCallName (TriggerDef e arg cpes wc) mn = TriggerDef e arg (updateCpeMethodName cpes mn) wc
 
 updateCpeMethodName :: CompoundTrigger -> MethodName -> CompoundTrigger
-updateCpeMethodName (NormalEvent bind id bs ev) id' = NormalEvent bind id' bs ev
-updateCpeMethodName cpe _                           = cpe
+updateCpeMethodName (NormalEvent bind id bs) id' = NormalEvent bind id' bs
+updateCpeMethodName cpe _                        = cpe
 
 updateCpeMethodCallBody :: CompoundTrigger -> [Bind] -> CompoundTrigger
-updateCpeMethodCallBody (NormalEvent bind id bs ev) bs' = NormalEvent bind id bs' ev
-updateCpeMethodCallBody cpe _                           = cpe
+updateCpeMethodCallBody (NormalEvent bind id bs) bs' = NormalEvent bind id bs'
+updateCpeMethodCallBody cpe _                        = cpe
 
 updateMethodCallBody :: TriggerDef -> [Bind] -> TriggerDef
 updateMethodCallBody (TriggerDef e arg cpes wc) bs = TriggerDef e arg (updateCpeMethodCallBody cpes bs) wc
