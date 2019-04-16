@@ -679,7 +679,23 @@ hasReferenceType xs id =
 -----------------
 
 genClassInvariants :: Abs.CInvariants -> UpgradeModel CInvariants
-genClassInvariants = undefined
+genClassInvariants absinvs =
+ case runWriter (genClassInvariants' absinvs) of
+      (cinvs,s) -> if null s
+                   then return cinvs
+                   else fail s
+
+genClassInvariants' :: Abs.CInvariants -> Writer String CInvariants
+genClassInvariants' Abs.CInvempty           = return []
+genClassInvariants' (Abs.CInvariants cinvs) = sequence $ map getCInv cinvs
+
+getCInv :: Abs.CInvariant -> Writer String CInvariant
+getCInv (Abs.CI cn jml) = 
+ case runWriter (getJML jml "") of
+      (jml',s) -> if null s 
+                  then return $ CI (getIdAbs cn) jml'
+                  else do tell $ "Error: Parse on error on class invariant [" ++ printTree jml ++ "] for the class " ++ getIdAbs cn ++ ".\n"
+                          return CInvNil
 
 -------------
 -- Methods --
