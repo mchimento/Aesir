@@ -107,16 +107,17 @@ getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
          ((PNIL,env'),_)                    -> do put env'
                                                   getForeaches foreaches (Ctxt vars' ies' trigs' PNIL []) scope
          ((Property pname states trans props,env'),s) -> 
-                  let accep  = checkAllHTsExist (getAccepting states) cns pname scope
-                      bad    = checkAllHTsExist (getBad states) cns pname scope
-                      normal = checkAllHTsExist (getNormal states) cns pname scope
-                      start  = checkAllHTsExist (getStarting states) cns pname scope
+                  let (accep,n1)  = checkAllHTsExist (getAccepting states) 0 cns pname scope
+                      (bad,n2)    = checkAllHTsExist (getBad states) 0 cns pname scope
+                      (normal,n3) = checkAllHTsExist (getNormal states) 0 cns pname scope
+                      (start,n4)  = checkAllHTsExist (getStarting states) 0 cns pname scope
+                      ip     = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
                       errs   = concat $ start ++ accep ++ bad ++ normal
                       trs    = (addComma.removeDuplicates) [tr | tr <- (splitOnIdentifier "," (s ^. _1)), not (elem tr (map ((\x -> x ++ "?").show) ies'))]
                       s'     = if (not.null) trs
                                then "Error: Trigger(s) [" ++ trs ++ "] is(are) used in the transitions, but is(are) not defined in section TRIGGERS.\n" 
-                                     ++ s ^. _2 ++ s ^. _3 ++ errs
-                               else s ^. _2 ++ s ^. _3 ++ errs 
+                                     ++ s ^. _2 ++ s ^. _3 ++ errs ++ ip
+                               else s ^. _2 ++ s ^. _3 ++ errs ++ ip
                   in if (null s')
                      then do put env' 
                              getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
@@ -646,19 +647,21 @@ genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
          ((PNIL,env'),_)                      -> fail $ "Error: The template " ++ getIdAbs id 
                                                         ++ " does not have a PROPERTY section.\n"
          ((Property pname states trans props, env'), s) -> 
-                  let accep   = checkAllHTsExist (getAccepting states) cns pname (InTemp (getIdAbs id)) 
-                      bad     = checkAllHTsExist (getBad states) cns pname (InTemp (getIdAbs id))
-                      normal  = checkAllHTsExist (getNormal states) cns pname (InTemp (getIdAbs id))
-                      start   = checkAllHTsExist (getStarting states) cns pname (InTemp (getIdAbs id))
+                  let (accep,n1)   = checkAllHTsExist (getAccepting states) 0 cns pname (InTemp (getIdAbs id)) 
+                      (bad,n2)     = checkAllHTsExist (getBad states) 0 cns pname (InTemp (getIdAbs id))
+                      (normal,n3)  = checkAllHTsExist (getNormal states) 0 cns pname (InTemp (getIdAbs id))
+                      (start,n4)   = checkAllHTsExist (getStarting states) 0 cns pname (InTemp (getIdAbs id))
+                      ip      = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
                       errs    = concat $ start ++ accep ++ bad ++ normal
                       s'      = s ^. _2 ++ errs ++ s ^. _3
                                 ++ if props /= PNIL 
                                    then "Error: In template " ++ getIdAbs id 
                                         ++ ", it should describe only one property.\n"
                                    else ""
+                      s''     = s' ++ ip
                       temptrs = splitOnIdentifier "," $ s ^. _1
-                  in if ((not.null) s')
-                     then fail s'
+                  in if ((not.null) s'')
+                     then fail s''
                      else do put env' { actes = actes env' ++ map show (getActEvents ies)}
                              return $ Template { _tempId        = getIdAbs id
                                                , _tempBinds     = args'
@@ -768,19 +771,25 @@ mAppend [] (y:ys) = y:ys
 mAppend (x:xs) [] = x:xs
 mAppend xs ys     = xs ++ "," ++ ys
 
-checkAllHTsExist :: [State] -> Maybe Id -> PropertyName -> Scope -> [String]
-checkAllHTsExist [] _ _ _                   = []
-checkAllHTsExist (s:ss) Nothing pn scope    = error $ "Error: Initial property name component is empty.\n"
-checkAllHTsExist (s:ss) (Just cns) pn scope = 
+checkAllHTsExist :: [State] -> Int -> Maybe Id -> PropertyName -> Scope -> ([String],Int)
+checkAllHTsExist [] n _ _ _                   = ([],n)
+checkAllHTsExist (s:ss) n Nothing pn scope    = error $ "Error: Initial property name component is empty.\n"
+checkAllHTsExist (s:ss) n (Just cns) pn scope = 
  let ns   = s ^. getNS
      cns' = s ^. getCNList
      aux  = [x | x <- cns' , not (x == cns)]
+     n'   = length [x | x <- cns' , x == cns]
  in if (null aux || (tempScope scope))
-    then checkAllHTsExist ss (Just cns) pn scope
-    else ("Error: On property " ++ pn
+    then (a,b + n')
+    else (("Error: On property " ++ pn
          ++ ", in state " ++ ns ++ ", the initial property ["
          ++ addComma aux
-         ++ "] do(es) not exist.\n") : checkAllHTsExist ss (Just cns) pn scope
+         ++ "] do(es) not exist.\n") : a ,b + n')
+                              where (a,b) = checkAllHTsExist ss n (Just cns) pn scope 
+
+multipleInitS :: (Int, String) -> String
+multipleInitS (0,_)         = ""
+multipleInitS (n, str) | n > 0 = "Error: Initial property annotated in multiple states in property " ++ str ++ ".\n"
 
 mkErrTuple :: (String, String,String) -> String -> String -> String -> (String,String,String)
 mkErrTuple s xs s' s'' = ((mAppend xs (s ^. _1)), s' ++ s ^. _2, s ^. _3 ++ s'')
