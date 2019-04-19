@@ -10,6 +10,9 @@ import ParserModel.Parser
 import ParserModel.Absaesir
 import ErrM
 import UpgradeAesir
+import ReachabilityAnalysis
+import TCInference
+import BRTComputation
 
 -------------
 -- Version --
