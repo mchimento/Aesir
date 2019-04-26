@@ -4,6 +4,7 @@ import System.Directory
 import System.Environment as SE
 import System.Console.GetOpt
 import Control.Monad.Writer
+import Data.Map.Strict hiding(null,map)
 import Types
 import CommonFunctions
 import ParserModel.Parser
@@ -88,8 +89,8 @@ run flags java_fn_add model_fn output_add =
       if not b 
       then putStrLn s
       else do let java_fn_add' = setAddress java_fn_add
-              ppdateP <- fmap parse $ readFile model_fn
-              case ppdateP of
+              modelP <- fmap parse $ readFile model_fn
+              case modelP of
                    Bad s        -> do putStrLn $ "\nThe parsing has failed: " ++ s
                    Ok absmodel -> 
                       do let output_addr = setAddress output_add
@@ -101,7 +102,8 @@ run flags java_fn_add model_fn output_add =
                          case runStateT model emptyEnv of
                               Bad s -> putStrLn s
                               Ok _  -> do if null (wellFormedActions model)
-                                          then do putStrLn "Aesir has finished successfully.\n"
+                                          then do reachMap <- reachabilityAnalysis model
+                                                  putStrLn "Aesir has finished successfully.\n"
                                           else putStrLn (wellFormedActions model)
 
 -------------------------
