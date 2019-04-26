@@ -677,6 +677,86 @@ hasReferenceType xs id =
       [] -> fail $ "Error: The template " ++ id ++ " does not have any reference type as argument.\n"
       _  -> return xs
 
+--Check for the arguments used in the create actions
+wellFormedActions :: UpgradeModel CModel -> String
+wellFormedActions model = 
+ let env = getEnvVal model in
+ case runWriter $ sequence $ map (wellFormedAction env) (allCreateAct env) of
+      (b,s) -> if and b
+               then ""
+               else s 
+
+wellFormedAction:: Env -> CreateActInfo -> Writer String Bool
+wellFormedAction env cai = 
+ let xs = [ tmp | tmp <- tempsInfo env, fst tmp == (cai ^. caiId)]
+ in if null xs
+    then writer (False, "Error: In an action create, the template " ++ cai ^. caiId ++ " does not exist.\n")
+    else let tempArgs = snd $ head $ xs
+             ys       = splitTempArgs (zip tempArgs (cai ^. caiArgs)) emptyTargs
+         in if length tempArgs /= length (cai ^. caiArgs)
+            then writer (False, "Error: In an action create, the amount of arguments does not match the arguments in template "
+                                ++ cai ^. caiId ++ ".\n")
+            else case runWriter $ checkTempArgs ys env (cai ^. caiScope) of
+                      (xs,s) -> if and xs
+                                then return True
+                                else writer (False,s)
+
+splitTempArgs :: [(Args,Act.Args)] -> TempArgs -> TempArgs
+splitTempArgs [] targs         = targs
+splitTempArgs (arg:args) targs = 
+ case getArgsType (fst arg) of
+      "Action"     -> splitTempArgs args (targs {targAct = arg : targAct targs})
+      "Condition"  -> splitTempArgs args (targs {targCond = arg : targCond targs})
+      "Trigger"    -> splitTempArgs args (targs {targTr = arg : targTr targs})
+      "MethodName" -> splitTempArgs args (targs {targMN = arg : targMN targs})
+      _            -> splitTempArgs args (targs {targRef = arg : targRef targs})
+
+--TODO: Update if Hoare triples are added to the model
+checkTempArgs :: TempArgs -> Env -> Scope -> Writer String [Bool]
+checkTempArgs targs env scope = 
+ sequence [ checkTempArgsActions (map snd $ targAct targs)
+          , checkTempArgsConditions (map snd $ targCond targs)
+          , checkTempArgsTriggers (map snd $ targTr targs) (allTriggers env) scope
+          , checkMethodNames (map snd $ targMN targs) (javaFilesInfo env)
+          ]
+
+checkTempArgsActions :: [Act.Args] -> Writer String Bool
+checkTempArgsActions []    = return True
+checkTempArgsActions targs = 
+ let (xs,ys) = partitionErr $ map (ParAct.parse . (\xs -> xs ++ ";") . showActArgs) targs
+ in if null xs 
+    then return True
+    else writer (False, "Error: In an action create: " ++ (unlines $ map fromBad xs))
+
+showActArgs :: Act.Args -> String
+showActArgs (Act.ArgsId (Act.IdAct id))                        = id
+showActArgs (Act.ArgsS s)                                      = s
+showActArgs (Act.ArgsNew (Act.Prog (Act.IdAct id) args inner)) = "new " ++ id ++ PrintAct.printTree args ++ PrintAct.printTree inner
+showActArgs act                                                = PrintAct.printTree act
+
+checkTempArgsConditions :: [Act.Args] -> Writer String Bool 
+checkTempArgsConditions targs = 
+ let (xs,ys) = partitionErr $ map (ParJML.parse . showActArgs) targs
+ in if null xs 
+    then return True
+    else writer (False, "Error: In an action create, syntax error(s) on the condition(s) [" ++ addComma (map fromBad xs) ++ "].\n")
+
+checkTempArgsTriggers :: [Act.Args] -> [TriggersInfo] -> Scope -> Writer String Bool
+checkTempArgsTriggers targs tinfs scope = 
+ let xs = [ tr | tr <- map showActArgs targs, tinf <- tinfs, tiScope tinf == scope, tiTN tinf == tr]
+ in if length xs == length targs
+    then return True 
+    else writer (False, "Error: In an action create, the trigger(s) [" ++ addComma xs ++ "] do(es) not exist.\n") 
+
+checkMethodNames :: [Act.Args] -> [(String, ClassInfo, JavaFilesInfo)] -> Writer String Bool
+checkMethodNames targs minfs =
+ let xs = removeDuplicates [ mn | mn <- map showActArgs targs, xs <- minfs, mn' <- methodsInFiles (xs ^. _3), mn == (mn' ^. _2) ]
+ in if length xs == length targs
+    then return True 
+    else writer (False, "Error: In an action create, the method(s) [" 
+                        ++ addComma [ x | x <- map showActArgs targs, not (elem x xs)] ++ "] do(es) not exist.\n") 
+
+
 -----------------
 -- CInvariants --
 -----------------
@@ -779,7 +859,7 @@ checkAllHTsExist (s:ss) n (Just cns) pn scope =
      cns' = s ^. getCNList
      aux  = [x | x <- cns' , not (x == cns)]
      n'   = length [x | x <- cns' , x == cns]
- in if (null aux || (tempScope scope))
+ in if (null aux)-- TODO: add '|| (tempScope scope))' if Hoare triples added to the model
     then (a,b + n')
     else (("Error: On property " ++ pn
          ++ ", in state " ++ ns ++ ", the initial property ["
@@ -788,8 +868,9 @@ checkAllHTsExist (s:ss) n (Just cns) pn scope =
                               where (a,b) = checkAllHTsExist ss n (Just cns) pn scope 
 
 multipleInitS :: (Int, String) -> String
-multipleInitS (0,_)         = ""
+multipleInitS (0,_)            = ""
 multipleInitS (n, str) | n > 0 = "Error: Initial property annotated in multiple states in property " ++ str ++ ".\n"
+multipleInitS (n, str) | n < 0 = ""
 
 mkErrTuple :: (String, String,String) -> String -> String -> String -> (String,String,String)
 mkErrTuple s xs s' s'' = ((mAppend xs (s ^. _1)), s' ++ s ^. _2, s ^. _3 ++ s'')

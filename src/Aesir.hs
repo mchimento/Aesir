@@ -19,7 +19,7 @@ import BRTComputation
 -------------
 
 version :: String
-version = "Aesir 0.0"
+version = "Aesir "
 
 -- version meaning   +--------- version ID
 --                   | +------- version ID
@@ -107,9 +107,6 @@ run flags java_fn_add model_fn output_add =
 -------------------------
 -- Auxiliary Functions --
 -------------------------
-
-wellFormedActions :: UpgradeModel CModel -> String
-wellFormedActions _ = ""
 
 --Method used to check if the provided arguments exist
 argsExist :: Maybe FilePath -> Maybe FilePath -> Maybe FilePath -> IO (Writer String Bool)
