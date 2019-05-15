@@ -55,6 +55,17 @@ data IProp = IProp Id JMLExp deriving(Eq,Show)
 getIdIprop :: IProp -> Id
 getIdIprop (IProp id _) = id 
 
+data IPropInfo = 
+ Info { _ipropID :: Id --Initial property ID
+      , _ipScope :: Scope --scope where it is annotated
+      , _ipPropn :: PropertyName --property where it is annotated
+      , _ipStn   :: NameState --state where it is annotated
+      }
+  deriving (Show)
+
+ipInfoEmpty :: IPropInfo
+ipInfoEmpty = Info "" TopLevel "" ""
+
 -----------
 -- Model --
 -----------
@@ -526,3 +537,4 @@ makeLenses ''Template
 makeLenses ''State
 makeLenses ''TriggerDef
 makeLenses ''CreateActInfo
+makeLenses ''IPropInfo

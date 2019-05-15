@@ -45,8 +45,10 @@ chainExec modelp model env errs n =
                  then chainExec modelp model'' env errs 2
                  else chainExec modelp model'' env (errs ++ (duplicateImps imps')) 2
       2 -> case runWriter (genIProp (modelp ^. _5)) of
-                (iprop', [])  -> chainExec modelp (initpropGet .~ iprop' $ model) (env { initprop = (Just (getIdIprop iprop'), Nothing) }) errs 3
-                (iprop', err) -> chainExec modelp (initpropGet .~ iprop' $ model) (env { initprop = (Just (getIdIprop iprop'), Nothing) }) (err:errs) 3
+                (iprop', [])  -> let ip = ipropID %~ (\id -> getIdIprop iprop') $ (initprop env)
+                                 in chainExec modelp (initpropGet .~ iprop' $ model) (env { initprop = ip}) errs 3
+                (iprop', err) -> let ip = ipropID %~ (\id -> getIdIprop iprop') $ (initprop env)
+                                 in chainExec modelp (initpropGet .~ iprop' $ model) (env { initprop = ip}) (err:errs) 3
       3 -> case runStateT (genTemplates (modelp ^. _3)) env of
                 Bad s            -> chainExec modelp model env (s:errs) 4
                 Ok (temps',env') -> chainExec modelp (templatesGet .~ temps' $ model) env' errs 4
@@ -102,7 +104,7 @@ getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
     trigs' <- getTriggers trigs scope []
     env <- get
     let prop' = getProperty prop (map tiTN (allTriggers env)) env scope
-    let cns   = fst $ initprop env
+    let cns   = (initprop env) ^. ipropID
     let ies'  = getActEvents ies  
     case runWriter prop' of
          ((PNIL,env'),_)                    -> do put env'
@@ -121,7 +123,8 @@ getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
                                else s ^. _2 ++ s ^. _3 ++ errs ++ ip
                   in if (null s')
                      then if (n1 + n2 + n3 + n4 == 1) 
-                          then do put (env' { initprop = (fst (initprop env'), Just scope)}) 
+                          then do let ip = ipScope %~ (const scope) $ (initprop env')
+                                  put (env' { initprop = ip }) 
                                   getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
                           else do put env' 
                                   getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
@@ -647,7 +650,7 @@ genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
  do args' <- hasReferenceType (map ((uncurry makeArgs).getArgsAbs) args) (getIdAbs id)
     trigs' <- getTriggers trs (InTemp (getIdAbs id)) args'
     env <- get
-    let cns   = fst $ initprop env
+    let cns   = (initprop env) ^. ipropID
     let prop' = getProperty prop (map (^. tName) trigs') env (InTemp (getIdAbs id))
     case runWriter prop' of
          ((PNIL,env'),_)                      -> fail $ "Error: The template " ++ getIdAbs id 
@@ -857,10 +860,10 @@ mAppend [] (y:ys) = y:ys
 mAppend (x:xs) [] = x:xs
 mAppend xs ys     = xs ++ "," ++ ys
 
-checkAllHTsExist :: [State] -> Int -> Maybe Id -> PropertyName -> Scope -> ([String],Int)
-checkAllHTsExist [] n _ _ _                   = ([],n)
-checkAllHTsExist (s:ss) n Nothing pn scope    = error $ "Error: Initial property name component is empty.\n"
-checkAllHTsExist (s:ss) n (Just cns) pn scope = 
+checkAllHTsExist :: [State] -> Int -> Id -> PropertyName -> Scope -> ([String],Int)
+checkAllHTsExist [] n _ _ _            = ([],n)
+checkAllHTsExist (s:ss) n "" pn scope  = error $ "Error: Initial property name component is empty.\n"
+checkAllHTsExist (s:ss) n cns pn scope = 
  let ns   = s ^. getNS
      cns' = s ^. getCNList
      aux  = [x | x <- cns' , not (x == cns)]
@@ -871,7 +874,7 @@ checkAllHTsExist (s:ss) n (Just cns) pn scope =
          ++ ", in state " ++ ns ++ ", the initial property ["
          ++ addComma aux
          ++ "] do(es) not exist.\n") : a ,b + n')
-                              where (a,b) = checkAllHTsExist ss n (Just cns) pn scope 
+                              where (a,b) = checkAllHTsExist ss n cns pn scope 
 
 multipleInitS :: (Int, String) -> String
 multipleInitS (0,_)            = ""
@@ -893,7 +896,7 @@ data Env = Env
  , propInForeach   :: [(PropertyName, ClassInfo, String)]-- is used to avoid ambigous reference to variable id in foreaches
  , actes           :: [Id] --list of all defined action events
  , allCreateAct    :: [CreateActInfo]--list of all actions \create used in the transitions of the model
- , initprop        :: (Maybe Id,Maybe Scope) -- (Initial property ID, scope where it is annotated)
+ , initprop        :: IPropInfo 
  }
   deriving (Show)
 
@@ -907,7 +910,7 @@ emptyEnv = Env { allTriggers     = []
                , propInForeach   = []
                , actes           = []
                , allCreateAct    = []
-               , initprop        = (Nothing,Nothing)
+               , initprop        = ipInfoEmpty
                }
 
 getClassVarName :: Trigger -> MethodName -> [Bind] -> Bind -> String -> Scope -> [Args] -> UpgradeModel (ClassInfo,String)
