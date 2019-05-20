@@ -61,7 +61,7 @@ data IPropInfo =
       , _ipPropn :: PropertyName --property where it is annotated
       , _ipStn   :: NameState --state where it is annotated
       }
-  deriving (Show)
+  deriving (Show,Eq)
 
 ipInfoEmpty :: IPropInfo
 ipInfoEmpty = Info "" TopLevel "" ""

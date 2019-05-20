@@ -115,17 +115,24 @@ getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
                       (normal,n3) = checkAllHTsExist (getNormal states) 0 cns pname scope
                       (start,n4)  = checkAllHTsExist (getStarting states) 0 cns pname scope
                       ip     = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
-                      errs   = concat $ start ++ accep ++ bad ++ normal
                       trs    = (addComma.removeDuplicates) [tr | tr <- (splitOnIdentifier "," (s ^. _1)), not (elem tr (map ((\x -> x ++ "?").show) ies'))]
                       s'     = if (not.null) trs
                                then "Error: Trigger(s) [" ++ trs ++ "] is(are) used in the transitions, but is(are) not defined in section TRIGGERS.\n" 
-                                     ++ s ^. _2 ++ s ^. _3 ++ errs ++ ip
-                               else s ^. _2 ++ s ^. _3 ++ errs ++ ip
+                                     ++ s ^. _2 ++ s ^. _3 ++ s ^. _4 ++ ip
+                               else s ^. _2 ++ s ^. _3 ++ s ^. _4 ++ ip
                   in if (null s')
                      then if (n1 + n2 + n3 + n4 == 1) 
-                          then do let ip = ipScope %~ (const scope) $ (initprop env')
-                                  put (env' { initprop = ip }) 
-                                  getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
+                          then if (alreadyAnnotatedIP (initprop env'))
+                               then fail $ "Error: Initial property annotated in multiple properties: [" 
+                                           ++ pname ++ ", " ++ (initprop env') ^. ipPropn ++ "].\n"
+                               else do let ip'   = ipScope %~ (const scope) $ (initprop env')
+                                       let ip''  = ipPropn %~ (const pname) $ ip'
+                                       let sts  = getAccepting states ++ getStarting states 
+                                                  ++ getBad states ++ getNormal states
+                                       let name = annotatedState sts
+                                       let ip''' = ipStn %~ (const name) $ ip''
+                                       put (env' { initprop = ip''' }) 
+                                       getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
                           else do put env' 
                                   getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
                      else fail s'
@@ -394,7 +401,7 @@ getWhereClause (Abs.WhereClauseDef wexp) = (concat.lines.printTree) wexp
 -- Properties --
 --
 
-getProperty :: Abs.Properties -> [Id] -> Env -> Scope -> Writer (String,String,String) (Property,Env)
+getProperty :: Abs.Properties -> [Id] -> Env -> Scope -> Writer (String,String,String,String) (Property,Env)
 getProperty Abs.PropertiesNil _ env _                                               = return (PNIL,env)
 getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms env scope =
  case runWriter (getTransitions (getIdAbs id) trans env scope) of
@@ -402,11 +409,18 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
            do let ts = map (trigger.arrow) t
               (p,env'') <- getProperty props enms env' scope
               let xs      = [x | x <- ts, not (elem x enms)]
-              let id'     = getIdAbs id
+              let pname   = getIdAbs id
               let states' = getStates' states
-              let s''     = execWriter $ checkStatesWF states' id' t
-              pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'')
-              return (Property { pName        = id'
+              let s''     = execWriter $ checkStatesWF states' pname t
+              let cns    = (initprop env) ^. ipropID
+              let (accep,n1)  = checkAllHTsExist (getAccepting states') 0 cns pname scope
+              let (bad,n2)    = checkAllHTsExist (getBad states') 0 cns pname scope
+              let (normal,n3) = checkAllHTsExist (getNormal states') 0 cns pname scope
+              let (start,n4)  = checkAllHTsExist (getStarting states') 0 cns pname scope
+              let ip     = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
+              let errs   = concat $ start ++ accep ++ bad ++ normal
+              pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' errs)
+              return (Property { pName        = pname
                                , pStates      = states'
                                , pTransitions = t
                                , pProps       = p },env'')
@@ -661,8 +675,7 @@ genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
                       (normal,n3)  = checkAllHTsExist (getNormal states) 0 cns pname (InTemp (getIdAbs id))
                       (start,n4)   = checkAllHTsExist (getStarting states) 0 cns pname (InTemp (getIdAbs id))
                       ip      = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
-                      errs    = concat $ start ++ accep ++ bad ++ normal
-                      s'      = s ^. _2 ++ errs ++ s ^. _3
+                      s'      = s ^. _2 ++ s ^. _4 ++ s ^. _3
                                 ++ if props /= PNIL 
                                    then "Error: In template " ++ getIdAbs id 
                                         ++ ", it should describe only one property.\n"
@@ -881,8 +894,22 @@ multipleInitS (0,_)            = ""
 multipleInitS (n, str) | n > 0 = "Error: Initial property annotated in multiple states in property " ++ str ++ ".\n"
 multipleInitS (n, str) | n < 0 = ""
 
-mkErrTuple :: (String, String,String) -> String -> String -> String -> (String,String,String)
-mkErrTuple s xs s' s'' = ((mAppend xs (s ^. _1)), s' ++ s ^. _2, s ^. _3 ++ s'')
+mkErrTuple :: (String, String,String,String) -> String -> String -> String -> String -> (String,String,String,String)
+mkErrTuple s xs s' s'' s''' = ((mAppend xs (s ^. _1)), s' ++ s ^. _2, s ^. _3 ++ s'', s ^. _4 ++ s''')
+
+alreadyAnnotatedIP :: IPropInfo -> Bool
+alreadyAnnotatedIP ip = 
+ let propn = ip ^. ipPropn 
+     scope = ip ^. ipScope
+     names = ip ^. ipStn
+ in not (null propn && scope == TopLevel && null names)
+
+annotatedState :: [State] -> String
+annotatedState []     = ""
+annotatedState (s:ss) = 
+ if ((not.null) (s ^. getCNList))
+ then s ^. getNS
+ else annotatedState ss
 
 ---------------------------------------------
 -- Environment with Model spec information --

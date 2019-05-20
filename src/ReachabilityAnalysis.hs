@@ -9,7 +9,8 @@ reachabilityAnalysis :: UpgradeModel CModel -> IO (Map.Map NameState Transitions
 reachabilityAnalysis umodel = 
  let cmodel = getValue umodel
      model  = cmodel ^. modelGet ^. ctxtGet
- in return Map.empty
+ in do putStrLn (show $ initprop $ getEnvVal umodel)
+       return Map.empty
 
 
 createMapping :: Property -> Map.Map (NameState,PropertyName) Transitions
