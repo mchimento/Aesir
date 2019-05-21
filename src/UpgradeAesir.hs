@@ -678,20 +678,14 @@ genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
          ((PNIL,env'),_)                      -> fail $ "Error: The template " ++ getIdAbs id 
                                                         ++ " does not have a PROPERTY section.\n"
          ((Property pname states trans props, env'), s) -> 
-                  let (accep,n1)   = checkAllHTsExist (getAccepting states) 0 cns pname (InTemp (getIdAbs id)) 
-                      (bad,n2)     = checkAllHTsExist (getBad states) 0 cns pname (InTemp (getIdAbs id))
-                      (normal,n3)  = checkAllHTsExist (getNormal states) 0 cns pname (InTemp (getIdAbs id))
-                      (start,n4)   = checkAllHTsExist (getStarting states) 0 cns pname (InTemp (getIdAbs id))
-                      ip      = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
-                      s'      = s ^. _2 ++ s ^. _4 ++ s ^. _3
+                  let s'      = s ^. _2 ++ s ^. _3 ++ s ^. _4
                                 ++ if props /= PNIL 
                                    then "Error: In template " ++ getIdAbs id 
                                         ++ ", it should describe only one property.\n"
                                    else ""
-                      s''     = s' ++ ip
                       temptrs = splitOnIdentifier "," $ s ^. _1
-                  in if ((not.null) s'')
-                     then fail s''
+                  in if ((not.null) s')
+                     then fail s'
                      else do put env' { actes = actes env' ++ map show (getActEvents ies)}
                              return $ Template { _tempId        = getIdAbs id
                                                , _tempBinds     = args'
