@@ -39,10 +39,14 @@ getProp prop@(Property pname _ _ props) ip =
 createMapping :: Property -> IPropInfo -> Map.Map NameState Transitions
 createMapping PNIL _                    = Map.empty
 createMapping (Property _ sts trs _) ip = 
- let states = getStarting sts ++ getAccepting sts ++ getNormal sts ++ getBad sts 
- in undefined
+ let states = getStarting sts ++ getNormal sts ++ getBad sts 
+ in Map.fromList [getTransForSt s trs | s <- states]
 
-getTransForSt :: State -> Transitions -> (State,Transitions)
-getTransForSt s []     = (s,[])
+getTransForSt :: State -> Transitions -> (NameState,Transitions)
+getTransForSt s []     = (s ^. getNS,[])
 getTransForSt s (t:ts) = 
+ if (fromState t == s ^. getNS)
+ then let (ns,ts') = getTransForSt s ts
+      in (ns,t:ts')
+ else getTransForSt s ts
  

@@ -4,7 +4,7 @@ import System.Directory
 import System.Environment as SE
 import System.Console.GetOpt
 import Control.Monad.Writer
-import Data.Map.Strict hiding(null,map)
+import qualified Data.Map.Strict as Map
 import Types
 import CommonFunctions
 import ParserModel.Parser
@@ -103,8 +103,14 @@ run flags java_fn_add model_fn output_add =
                               Bad s -> putStrLn s
                               Ok _  -> do if null (wellFormedActions model)
                                           then do reachMap <- reachabilityAnalysis model
-                                                  putStrLn "Aesir has finished successfully.\n"
+                                                  if Map.null reachMap
+                                                  then putStrLn failReachAnalysis
+                                                  else putStrLn "Aesir has finished successfully.\n"
                                           else putStrLn (wellFormedActions model)
+
+
+failReachAnalysis :: String
+failReachAnalysis = "Error: Map computation in the reachability analysis has failed.\n"
 
 -------------------------
 -- Auxiliary Functions --
