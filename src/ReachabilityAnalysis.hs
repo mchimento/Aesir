@@ -19,15 +19,30 @@ lookforProp :: Model -> IPropInfo -> Property
 lookforProp model ip = 
  case ip ^. ipScope of
       TopLevel -> getProp (model ^. ctxtGet ^. property) ip
-      InFor id -> undefined
-      InTemp _ -> undefined
+      InFor id -> lookforPropInFor (model ^. ctxtGet ^. foreaches) ip
+      InTemp _ -> undefined --TODO: Fix if templates are added to the model language
+
+lookforPropInFor :: Foreaches -> IPropInfo -> Property
+lookforPropInFor [] _      = PNIL
+lookforPropInFor (x:xs) ip = 
+ if (ip ^. ipScope == InFor (x ^. getIdForeach))
+ then getProp (x ^. getCtxtForeach ^. property) ip
+ else lookforPropInFor xs ip
 
 getProp :: Property -> IPropInfo -> Property
-getProp PNIL _ = PNIL
-getProp (Property pname states trans props) ip = 
- undefined
+getProp PNIL _                             = PNIL
+getProp prop@(Property pname _ _ props) ip = 
+ if (pname == ip ^. ipPropn)
+ then prop
+ else getProp props ip
  
 createMapping :: Property -> IPropInfo -> Map.Map NameState Transitions
-createMapping PNIL _                       = Map.empty
-createMapping (Property pn _ trs props) ip = 
- undefined
+createMapping PNIL _                    = Map.empty
+createMapping (Property _ sts trs _) ip = 
+ let states = getStarting sts ++ getAccepting sts ++ getNormal sts ++ getBad sts 
+ in undefined
+
+getTransForSt :: State -> Transitions -> (State,Transitions)
+getTransForSt s []     = (s,[])
+getTransForSt s (t:ts) = 
+ 
