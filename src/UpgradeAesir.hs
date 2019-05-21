@@ -110,31 +110,15 @@ getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
          ((PNIL,env'),_)                    -> do put env'
                                                   getForeaches foreaches (Ctxt vars' ies' trigs' PNIL []) scope
          ((Property pname states trans props,env'),s) -> 
-                  let (accep,n1)  = checkAllHTsExist (getAccepting states) 0 cns pname scope
-                      (bad,n2)    = checkAllHTsExist (getBad states) 0 cns pname scope
-                      (normal,n3) = checkAllHTsExist (getNormal states) 0 cns pname scope
-                      (start,n4)  = checkAllHTsExist (getStarting states) 0 cns pname scope
-                      ip     = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
-                      trs    = (addComma.removeDuplicates) [tr | tr <- (splitOnIdentifier "," (s ^. _1)), not (elem tr (map ((\x -> x ++ "?").show) ies'))]
+                  let aux    = [tr | tr <- (splitOnIdentifier "," (s ^. _1)), not (elem tr (map ((\x -> x ++ "?").show) ies'))]
+                      trs    = (addComma.removeDuplicates) aux
                       s'     = if (not.null) trs
                                then "Error: Trigger(s) [" ++ trs ++ "] is(are) used in the transitions, but is(are) not defined in section TRIGGERS.\n" 
-                                     ++ s ^. _2 ++ s ^. _3 ++ s ^. _4 ++ ip
-                               else s ^. _2 ++ s ^. _3 ++ s ^. _4 ++ ip
+                                     ++ s ^. _2 ++ s ^. _3 ++ s ^. _4
+                               else s ^. _2 ++ s ^. _3 ++ s ^. _4
                   in if (null s')
-                     then if (n1 + n2 + n3 + n4 == 1) 
-                          then if (alreadyAnnotatedIP (initprop env'))
-                               then fail $ "Error: Initial property annotated in multiple properties: [" 
-                                           ++ pname ++ ", " ++ (initprop env') ^. ipPropn ++ "].\n"
-                               else do let ip'   = ipScope %~ (const scope) $ (initprop env')
-                                       let ip''  = ipPropn %~ (const pname) $ ip'
-                                       let sts  = getAccepting states ++ getStarting states 
-                                                  ++ getBad states ++ getNormal states
-                                       let name = annotatedState sts
-                                       let ip''' = ipStn %~ (const name) $ ip''
-                                       put (env' { initprop = ip''' }) 
-                                       getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
-                          else do put env' 
-                                  getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
+                     then do put env' 
+                             getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
                      else fail s'
 
 ---
@@ -406,24 +390,48 @@ getProperty Abs.PropertiesNil _ env _                                           
 getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms env scope =
  case runWriter (getTransitions (getIdAbs id) trans env scope) of
       ((t,env'),s') ->
-           do let ts = map (trigger.arrow) t
-              (p,env'') <- getProperty props enms env' scope
-              let xs      = [x | x <- ts, not (elem x enms)]
-              let pname   = getIdAbs id
-              let states' = getStates' states
-              let s''     = execWriter $ checkStatesWF states' pname t
-              let cns    = (initprop env) ^. ipropID
-              let (accep,n1)  = checkAllHTsExist (getAccepting states') 0 cns pname scope
-              let (bad,n2)    = checkAllHTsExist (getBad states') 0 cns pname scope
-              let (normal,n3) = checkAllHTsExist (getNormal states') 0 cns pname scope
-              let (start,n4)  = checkAllHTsExist (getStarting states') 0 cns pname scope
-              let ip     = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
-              let errs   = concat $ start ++ accep ++ bad ++ normal
-              pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' errs)
-              return (Property { pName        = pname
-                               , pStates      = states'
-                               , pTransitions = t
-                               , pProps       = p },env'')
+           let ts      = map (trigger.arrow) t              
+               xs      = [x | x <- ts, not (elem x enms)]
+               pname   = getIdAbs id
+               states' = getStates' states
+               s''     = execWriter $ checkStatesWF states' pname t
+               cns     = (initprop env) ^. ipropID
+               (accep,n1)  = checkAllHTsExist (getAccepting states') 0 cns pname scope
+               (bad,n2)    = checkAllHTsExist (getBad states') 0 cns pname scope
+               (normal,n3) = checkAllHTsExist (getNormal states') 0 cns pname scope
+               (start,n4)  = checkAllHTsExist (getStarting states') 0 cns pname scope
+               ip     = multipleInitS (n1 + n2 + n3 + n4 - 1, pname)
+               errs   = concat $ start ++ accep ++ bad ++ normal
+               errs'  = errs ++ ip
+            in if (n1 + n2 + n3 + n4 == 1)
+               then if (alreadyAnnotatedIP (initprop env'))
+                    then do let er = "Error: Initial property annotated in multiple properties: [" 
+                                      ++ pname ++ ", " ++ (initprop env') ^. ipPropn ++ "].\n"
+                            (p,env'') <- getProperty props enms env' scope
+                            pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' (errs' ++ er))
+                            return (Property { pName        = pname
+                                             , pStates      = states'
+                                             , pTransitions = t
+                                             , pProps       = p },env'')
+                    else do let ip'   = ipScope %~ (const scope) $ (initprop env')
+                            let ip''  = ipPropn %~ (const pname) $ ip'
+                            let sts   = getAccepting states' ++ getStarting states' 
+                                        ++ getBad states' ++ getNormal states'
+                            let name = annotatedState sts
+                            let ip''' = ipStn %~ (const name) $ ip''
+                            let env'' = env' { initprop = ip''' }
+                            (p,env''') <- getProperty props enms env'' scope
+                            pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' errs')
+                            return (Property { pName        = pname
+                                             , pStates      = states'
+                                             , pTransitions = t
+                                             , pProps       = p },env''')
+               else do (p,env'') <- getProperty props enms env' scope
+                       pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' errs')
+                       return (Property { pName        = pname
+                                        , pStates      = states'
+                                        , pTransitions = t
+                                        , pProps       = p },env'')
 
 getStates' :: Abs.States -> States
 getStates' (Abs.States start accep bad norm) = States { getStarting = getStarting' start
