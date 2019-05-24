@@ -110,7 +110,7 @@ getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
          ((PNIL,env'),_)                    -> do put env'
                                                   getForeaches foreaches (Ctxt vars' ies' trigs' PNIL []) scope
          ((Property pname states trans props,env'),s) -> 
-                  let aux    = [tr | tr <- (splitOnIdentifier "," (s ^. _1)), not (elem tr (map ((\x -> x ++ "?").show) ies'))]
+                  let aux    = [tr | tr <- s ^. _1, not (elem tr (map ((\x -> x ++ "?").show) ies'))]
                       trs    = (addComma.removeDuplicates) aux
                       s'     = if (not.null) trs
                                then "Error: Trigger(s) [" ++ trs ++ "] is(are) used in the transitions, but is(are) not defined in section TRIGGERS.\n" 
@@ -385,7 +385,7 @@ getWhereClause (Abs.WhereClauseDef wexp) = (concat.lines.printTree) wexp
 -- Properties --
 --
 
-getProperty :: Abs.Properties -> [Id] -> Env -> Scope -> Writer (String,String,String,String) (Property,Env)
+getProperty :: Abs.Properties -> [Id] -> Env -> Scope -> Writer ([String],String,String,String) (Property,Env)
 getProperty Abs.PropertiesNil _ env _                                               = return (PNIL,env)
 getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms env scope =
  case runWriter (getTransitions (getIdAbs id) trans env scope) of
@@ -408,7 +408,7 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                     then do let er = "Error: Initial property annotated in multiple properties: [" 
                                       ++ pname ++ ", " ++ (initprop env') ^. ipPropn ++ "].\n"
                             (p,env'') <- getProperty props enms env' scope
-                            pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' (errs' ++ er))
+                            pass $ return ((), \s -> mkErrTuple s xs s' s'' (errs' ++ er))
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
@@ -421,13 +421,13 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                             let ip''' = ipStn %~ (const name) $ ip''
                             let env'' = env' { initprop = ip''' }
                             (p,env''') <- getProperty props enms env'' scope
-                            pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' errs')
+                            pass $ return ((), \s -> mkErrTuple s xs s' s'' errs')
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
                                              , pProps       = p },env''')
                else do (p,env'') <- getProperty props enms env' scope
-                       pass $ return ((), \s -> mkErrTuple s (addComma xs) s' s'' errs')
+                       pass $ return ((), \s -> mkErrTuple s xs s' s'' errs')
                        return (Property { pName        = pname
                                         , pStates      = states'
                                         , pTransitions = t
@@ -683,7 +683,7 @@ genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
                                    then "Error: In template " ++ getIdAbs id 
                                         ++ ", it should describe only one property.\n"
                                    else ""
-                      temptrs = splitOnIdentifier "," $ s ^. _1
+                      temptrs = s ^. _1
                   in if ((not.null) s')
                      then fail s'
                      else do put env' { actes = actes env' ++ map show (getActEvents ies)}
@@ -870,10 +870,10 @@ joinImport [ys]   = ys
 joinImport (xs:ys:iss) = xs ++ "." ++ joinImport (ys:iss)
 
 mAppend :: String -> String -> String
-mAppend [] []     = ""
-mAppend xs []     = xs
-mAppend [] (y:ys) = y:ys
-mAppend xs (y:ys) = xs ++ "," ++ y:ys
+mAppend [] []         = ""
+mAppend xs []         = xs
+mAppend [] ys         = ys
+mAppend (x:xs) (y:ys) = (x:xs) ++ "," ++ y:ys
 
 checkAllHTsExist :: [State] -> Int -> Id -> PropertyName -> Scope -> ([String],Int)
 checkAllHTsExist [] n _ _ _            = ([],n)
@@ -896,8 +896,8 @@ multipleInitS (0,_)            = ""
 multipleInitS (n, str) | n > 0 = "Error: Initial property annotated in multiple states in property " ++ str ++ ".\n"
 multipleInitS (n, str) | n < 0 = ""
 
-mkErrTuple :: (String, String,String,String) -> String -> String -> String -> String -> (String,String,String,String)
-mkErrTuple s xs s' s'' s''' = ((mAppend (s ^. _1) xs), s' ++ s ^. _2, s ^. _3 ++ s'', s ^. _4 ++ s''')
+mkErrTuple :: ([String], String,String,String) -> [String] -> String -> String -> String -> ([String],String,String,String)
+mkErrTuple s xs s' s'' s''' = (s ^. _1 ++ xs, s' ++ s ^. _2, s ^. _3 ++ s'', s ^. _4 ++ s''')
 
 alreadyAnnotatedIP :: IPropInfo -> Bool
 alreadyAnnotatedIP ip = 
