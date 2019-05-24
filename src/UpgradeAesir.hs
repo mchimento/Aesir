@@ -872,6 +872,7 @@ joinImport (xs:ys:iss) = xs ++ "." ++ joinImport (ys:iss)
 mAppend :: String -> String -> String
 mAppend [] []     = ""
 mAppend xs []     = xs
+mAppend [] (y:ys) = y:ys
 mAppend xs (y:ys) = xs ++ "," ++ y:ys
 
 checkAllHTsExist :: [State] -> Int -> Id -> PropertyName -> Scope -> ([String],Int)
