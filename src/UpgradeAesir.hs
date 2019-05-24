@@ -871,9 +871,8 @@ joinImport (xs:ys:iss) = xs ++ "." ++ joinImport (ys:iss)
 
 mAppend :: String -> String -> String
 mAppend [] []     = ""
-mAppend [] (y:ys) = y:ys
-mAppend (x:xs) [] = x:xs
-mAppend xs ys     = xs ++ "," ++ ys
+mAppend xs []     = xs
+mAppend xs (y:ys) = xs ++ "," ++ y:ys
 
 checkAllHTsExist :: [State] -> Int -> Id -> PropertyName -> Scope -> ([String],Int)
 checkAllHTsExist [] n _ _ _            = ([],n)
@@ -897,7 +896,7 @@ multipleInitS (n, str) | n > 0 = "Error: Initial property annotated in multiple 
 multipleInitS (n, str) | n < 0 = ""
 
 mkErrTuple :: (String, String,String,String) -> String -> String -> String -> String -> (String,String,String,String)
-mkErrTuple s xs s' s'' s''' = ((mAppend xs (s ^. _1)), s' ++ s ^. _2, s ^. _3 ++ s'', s ^. _4 ++ s''')
+mkErrTuple s xs s' s'' s''' = ((mAppend (s ^. _1) xs), s' ++ s ^. _2, s ^. _3 ++ s'', s ^. _4 ++ s''')
 
 alreadyAnnotatedIP :: IPropInfo -> Bool
 alreadyAnnotatedIP ip = 
