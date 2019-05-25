@@ -102,10 +102,11 @@ getCtxt (Abs.Ctxt vars ies Abs.TriggersNil prop foreaches) scope =
 getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
  do vars' <- getVars vars
     trigs' <- getTriggers trigs scope []
+    checkCollectionTrPPD trigs'
     env <- get
     let prop' = getProperty prop (map tiTN (allTriggers env)) env scope
     let cns   = (initprop env) ^. ipropID
-    let ies'  = getActEvents ies  
+    let ies'  = getActEvents ies ++ map ActEvent (actes env) 
     case runWriter prop' of
          ((PNIL,env'),_)                    -> do put env'
                                                   getForeaches foreaches (Ctxt vars' ies' trigs' PNIL []) scope
@@ -239,8 +240,13 @@ checkSpecialCases b mn bind bs rs zs id env scope =
                                   (True,s)  -> writer (True,s)
                                   (False,s) -> if tempScope scope
                                                then writer (True,s)
-                                               else writer (False, "Error: Trigger declaration [" ++ id ++ "] uses wrong argument(s) [" 
-                                                           ++ addComma zs ++ "] in the method component.\n")
+                                               else if s == "not a channel"
+                                                    then writer (False, "Error: In trigger declaration [" ++ id 
+                                                                   ++ "], the bind [" 
+                                                                   ++ show bind ++ "] is not recognised.\n")
+                                                    else writer (False, "Error: Trigger declaration [" ++ id 
+                                                                        ++ "] uses wrong argument(s) [" 
+                                                                        ++ addComma zs ++ "] in the method component.\n")
                         else writer (False, s)
 
 --Method handling new
@@ -268,8 +274,10 @@ checkForChannel bind env =
                               $ filter (\v -> getTypeVar v == "Channel") $ varsInModel env
                    in if elem id vars
                       then writer (True,id)
-                      else return False
-      _         -> return False
+                      else do tell "not a channel"
+                              return False
+      _         -> do tell "Not BindId"
+                      return False
 
 properBind :: Bind -> [Bind]
 properBind (BindType t id) = [BindType t id]
@@ -331,7 +339,7 @@ getCompTriggers ce                                      = getCompTrigger ce
 
 getCEElement :: Abs.CEElement -> Writer String CEElement
 getCEElement (Abs.CEct ct)    = 
- case runWriter (getCompTrigger ct) of
+ case runWriter (getCompTriggers ct) of
       (ct',s) -> do tell s
                     return (CEct ct')
 getCEElement (Abs.CEid id)    = 
@@ -340,6 +348,55 @@ getCEElement (Abs.CEid id)    =
 getCEElement (Abs.CEidpar id) = 
  do let id' = getIdAbs id
     return (CEidpar id')
+
+--Checks if the triggers in the collections are defined
+checkCollectionTrPPD :: Triggers -> UpgradeModel ()
+checkCollectionTrPPD trs = 
+ do env <- get
+    case runWriter (checkCollectionTr trs env) of
+         (trs', s) -> if null s
+                      then return ()
+                      else fail s
+
+checkCollectionTr :: Triggers -> Env -> Writer String [Trigger]
+checkCollectionTr [] _         = return []
+checkCollectionTr (tr:trs) env = 
+ case tr ^. compTrigger of
+      Collection (CECollection ces wc) 
+                    -> do trs' <- checkCollectionTr trs env
+                          case runWriter (checkTriggerCE tr env) of
+                               (tr',s) -> do pass $ return ((), \s' -> s ++ s') 
+                                             return (tr'++trs') 
+      _             -> do trs' <- checkCollectionTr trs env
+                          return (tr ^. tName:trs')
+
+checkTriggerCE :: TriggerDef -> Env -> Writer String [Trigger]
+checkTriggerCE tr env = 
+ case (tr ^. compTrigger) of
+      Collection (CECollection ces wc) -> do let xs = getTriggersInCE ces
+                                             let ys = [y | y <- xs, not (elem y (map tiTN $ allTriggers env))]
+                                             if (not.null) ys
+                                             then writer (xs,"Error: In trigger collection " ++ tr ^. tName 
+                                                             ++ ", the trigger(s) [" ++ addComma ys
+                                                             ++ "] is(are) used, but not previously defined.\n")
+                                             else return xs
+      _                                -> return []
+
+getTriggersInCE :: [CEElement] -> [Trigger]
+getTriggersInCE []     = []
+getTriggersInCE (x:xs) = getTriggerInCE x ++ getTriggersInCE xs
+
+getTriggerInCE :: CEElement -> [Trigger]
+getTriggerInCE (CEid id)    = [id]
+getTriggerInCE (CEidpar id) = [id]
+getTriggerInCE (CEct ct)    = getTriggerCompoundCE ct
+
+getTriggerCompoundCE :: CompoundTrigger ->[Trigger]
+getTriggerCompoundCE (Collection (CECollection ces wc)) = getTriggersInCE ces
+getTriggerCompoundCE (OnlyIdPar id)                     = [id]
+getTriggerCompoundCE (OnlyId id)                        = [id]
+getTriggerCompoundCE _                                  = []
+
 
 --Checks if the arguments in the triggers have the right form
 getBindsArgs :: [Abs.Bind] -> Writer String [Bind]
