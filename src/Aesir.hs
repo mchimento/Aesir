@@ -122,7 +122,7 @@ run flags stToReach iter java_fn_add model_fn output_add =
                                                        if Map.null reachMap
                                                        then putStrLn "Error: Reachability analysis has failed.\n"
                                                        else do putStrLn "Reachability analysis... [DONE]"
-                                                               brt <- computeBRT model reachMap iter
+                                                               brt <- computeBRT model reachMap iter stToReach
                                                                putStrLn "Aesir has finished successfully.\n"
                                                else putStrLn $ "Error: Argument " ++ stToReach
                                                                 ++ " is not a state of the model.\n" 

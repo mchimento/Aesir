@@ -53,7 +53,10 @@ type MethodName = String
 data IProp = IProp Id JMLExp deriving(Eq,Show)
 
 getIdIprop :: IProp -> Id
-getIdIprop (IProp id _) = id 
+getIdIprop (IProp id _) = id
+
+getJMLEprop :: IProp -> JMLExp
+getJMLEprop (IProp _ jml) = jml
 
 data IPropInfo = 
  Info { _ipropID :: Id --Initial property ID
