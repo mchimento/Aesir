@@ -10,13 +10,13 @@ import Types
 ----------------------------------
 
 data BRT = BRT
- { _parent    :: BRT
- , _childrein :: [BRT]
- , _initial   :: State
- , _current   :: State
- , _property  :: JMLExp
- , _method    :: (Trigger, [Bind])
- , _iter      :: Integer
+ { _parent    :: Maybe BRT --Points to the parent of the brt node
+ , _childrein :: [BRT]     --List of children of the brt node
+ , _initial   :: NameState --Initial state of the model
+ , _current   :: NameState --Current (analysed) state 
+ , _property  :: JMLExp    --FOL formula in root, or backtracked condition
+ , _method    :: Maybe (Trigger, [Bind])--(method_executed_to_reach_parent,methods_arguments)
+ , _iter      :: Integer --allowed amount of iterations for the loops
  } deriving (Eq,Read)
 
 

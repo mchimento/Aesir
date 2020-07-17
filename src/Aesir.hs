@@ -5,10 +5,12 @@ import System.Environment as SE
 import System.Console.GetOpt
 import Control.Monad.Writer
 import qualified Data.Map.Strict as Map
+import Text.Read (readMaybe)
+import Data.Maybe
 import Types
 import CommonFunctions
 import ParserModel.Parser
-import ParserModel.Absaesir
+import ParserModel.Absaesir hiding (NameState)
 import ErrM
 import UpgradeAesir
 import ReachabilityAnalysis
@@ -68,20 +70,33 @@ main =
                                                 Bad s -> putStrLn $ "The parsing has failed.\n\n" ++ s ++ "\n"
                                                 Ok _  -> putStrLn "The parsing was successful.\n"
              else putStrLn s
-      (flags,[java_fn_add, model_fn, output_add],[]) -> 
+      (flags,[stToReach,iter,java_fn_add, model_fn, output_add],[]) -> 
           if checkOptions flags
-          then run flags java_fn_add model_fn output_add
+          then do iter' <- convert2Int iter
+                  if iter' == Nothing
+                  then do name <- getProgName
+                          putStrLn "\nError: Second argument must be an integer.\n"
+                          putStrLn (usage name) 
+                  else run flags stToReach (fromJust iter') java_fn_add model_fn output_add
           else putStrLn ("\nError: Invalid usage of options.\n")
       (_,_,[]) -> do name <- getProgName
-                     putStrLn ("Usage: " ++ name ++ " [-OPTIONS] <java_source_files> <model_file> <output>\n")
+                     putStrLn (usage name)
       (_,_,errs) -> sequence_ $ map putStrLn errs
+
+
+convert2Int :: String -> IO (Maybe Integer)
+convert2Int s = return $ readMaybe s
+
+usage :: String -> String
+usage name = "Usage: " ++ name 
+             ++ " [-OPTIONS] <state_to_reach> <loop_iter_limit> <java_source_files> <model_file> <output>\n"
 
 ----------------
 -- Runs Aesir --
 ----------------
 
-run :: [Flag] -> FilePath -> FilePath -> FilePath -> IO ()
-run flags java_fn_add model_fn output_add =  
+run :: [Flag] -> NameState -> Integer -> FilePath -> FilePath -> FilePath -> IO ()
+run flags stToReach iter java_fn_add model_fn output_add =  
  do putStrLn $ "\nWelcome to Aesir\n"
     ws <- argsExist (Just java_fn_add) (Just model_fn) (Just output_add)
     case runWriter ws of
@@ -102,12 +117,15 @@ run flags java_fn_add model_fn output_add =
                          case runStateT model emptyEnv of
                               Bad s -> putStrLn s
                               Ok _  -> do if null (wellFormedActions model)
-                                          then do reachMap <- reachabilityAnalysis model
-                                                  if Map.null reachMap
-                                                  then putStrLn "Error: Reachability analysis has failed.\n"
-                                                  else do putStrLn "Reachability analysis... [DONE]"
-                                                          brt <- computeBRT model reachMap
-                                                          putStrLn "Aesir has finished successfully.\n"
+                                          then if elem stToReach (sts $ getEnvVal model)
+                                               then do reachMap <- reachabilityAnalysis model
+                                                       if Map.null reachMap
+                                                       then putStrLn "Error: Reachability analysis has failed.\n"
+                                                       else do putStrLn "Reachability analysis... [DONE]"
+                                                               brt <- computeBRT model reachMap iter
+                                                               putStrLn "Aesir has finished successfully.\n"
+                                               else putStrLn $ "Error: Argument " ++ stToReach
+                                                                ++ " is not a state of the model.\n" 
                                           else putStrLn (wellFormedActions model)
 
 -------------------------

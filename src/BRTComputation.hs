@@ -8,13 +8,11 @@ import Types
 import UpgradeAesir
 import BRT
 
-defaultIter :: Integer
-defaultIter = 2
-
 brtAux :: BRT
 brtAux = undefined
 
-computeBRT :: UpgradeModel CModel -> Map.Map NameState Transitions -> IO BRT
-computeBRT cm mp = 
- do putStrLn "Backwards reachability tree computation... [DONE]\n"
+computeBRT :: UpgradeModel CModel -> Map.Map NameState Transitions -> Integer -> IO BRT
+computeBRT cm mp iter = 
+ do --root <- BRT Nothing [] 
+    putStrLn "Backwards reachability tree computation... [DONE]\n"
     return brtAux

@@ -446,6 +446,7 @@ getWhereClause (Abs.WhereClauseDef wexp) = (concat.lines.printTree) wexp
 -- Properties --
 --
 
+--TODO:If more than one automaton allow per model, then introduce the commented lines
 getProperty :: Abs.Properties -> [Id] -> Env -> Scope -> Writer ([String],String,String,String) (Property,Env)
 getProperty Abs.PropertiesNil _ env _                                               = return (PNIL,env)
 getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms env scope =
@@ -478,12 +479,12 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
-                                             , pProps       = p },env'')
+                                             , pProps       = p },env'' {sts = removeDuplicates (sts env'')})
                     else do let ip'   = ipScope %~ (const scope) $ (initprop env')
                             let ip''  = ipPropn %~ (const pname) $ ip'
-                            let sts   = getAccepting states' ++ getStarting states' 
+                            let sts'  = getAccepting states' ++ getStarting states' 
                                         ++ getBad states' ++ getNormal states'
-                            let name = annotatedState sts
+                            let name = annotatedState sts'
                             let ip''' = ipStn %~ (const name) $ ip''
                             let env'' = env' { initprop = ip''' }
                             --(p,env''') <- getProperty props enms env'' scope
@@ -496,7 +497,7 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
-                                             , pProps       = p },env''')
+                                             , pProps       = p },env''' {sts = removeDuplicates (sts env''')})
                else do --(p,env'') <- getProperty props enms env' scope
                        let er' = if Abs.PropertiesNil == props
                                  then ""
@@ -507,7 +508,7 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                        return (Property { pName        = pname
                                         , pStates      = states'
                                         , pTransitions = t
-                                        , pProps       = p },env'')
+                                        , pProps       = p },env'' {sts = removeDuplicates (sts env'')})
 
 getStates' :: Abs.States -> States
 getStates' (Abs.States start accep bad norm) = States { getStarting = getStarting' start
@@ -615,7 +616,8 @@ getTransitions id (Abs.Transitions ts) env scope =
     let trans = map fst xs
     let envs  = map snd xs
     let env'  = joinEnvsCreate envs emptyEnv
-    return (trans,env')
+    let ys    = [fromState tr | tr <- trans] ++ [toState tr | tr <- trans]
+    return (trans,env' {sts = ys})
 
 getTransition' :: PropertyName -> Env -> Scope -> Abs.Transition -> Writer String (Transition,Env)
 getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2) ar) = 
@@ -629,7 +631,7 @@ getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2
              return (Transition { fromState = getIdAbs q1
                                 , arrow = xs
                                 , toState = getIdAbs q2
-                                },env')
+                                }, env')
 
 getArrow :: Abs.Arrow -> Env -> Scope -> Writer String (Arrow,Env)
 getArrow (Abs.Arrow id mark Abs.Cond1) env scope        = 
@@ -1024,7 +1026,8 @@ data Env = Env
  , propInForeach   :: [(PropertyName, ClassInfo, String)]-- is used to avoid ambigous reference to variable id in foreaches
  , actes           :: [Id] --list of all defined action events
  , allCreateAct    :: [CreateActInfo]--list of all actions \create used in the transitions of the model
- , initprop        :: IPropInfo 
+ , sts             :: [NameState] --States of the model
+ , initprop        :: IPropInfo
  }
   deriving (Show)
 
@@ -1038,6 +1041,7 @@ emptyEnv = Env { allTriggers     = []
                , propInForeach   = []
                , actes           = []
                , allCreateAct    = []
+               , sts             = []
                , initprop        = ipInfoEmpty
                }
 
@@ -1074,7 +1078,6 @@ updateInfo m mn einfo =
  case Map.lookup mn m of
       Nothing -> Map.insert mn [einfo] m
       Just xs -> Map.insert mn (einfo:xs) m
-
 
 ----------------------------
 -- Monad State operations --
