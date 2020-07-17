@@ -95,7 +95,9 @@ genModel (Abs.Model ctxt) =
 
 getCtxt :: Abs.Context -> Scope -> UpgradeModel Context
 getCtxt (Abs.Ctxt _ _ _ Abs.PropertiesNil Abs.ForeachesNil) _ = fail $ "Error: No properties were defined in section GLOBAL\n."
-getCtxt (Abs.Ctxt Abs.VarNil Abs.ActEventsNil Abs.TriggersNil Abs.PropertiesNil foreaches@(Abs.ForeachesDef _ _ _)) TopLevel = getForeaches foreaches (Ctxt [] [] [] PNIL []) (InFor (ForId "TopLevel"))
+getCtxt (Abs.Ctxt Abs.VarNil Abs.ActEventsNil Abs.TriggersNil Abs.PropertiesNil foreaches@(Abs.ForeachesDef _ _ _)) TopLevel = 
+-- getForeaches foreaches (Ctxt [] [] [] PNIL []) (InFor (ForId "TopLevel"))
+ fail "Error: This version of Aesir does not support FOREACH constructs.\n"
 getCtxt (Abs.Ctxt vars ies Abs.TriggersNil prop foreaches) scope =
  getCtxt (Abs.Ctxt vars ies (Abs.TriggersDef []) prop foreaches) scope
 getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
@@ -466,8 +468,13 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                then if (alreadyAnnotatedIP (initprop env'))
                     then do let er = "Error: Initial property annotated in multiple properties: [" 
                                       ++ pname ++ ", " ++ (initprop env') ^. ipPropn ++ "].\n"
-                            (p,env'') <- getProperty props enms env' scope
-                            pass $ return ((), \s -> mkErrTuple s xs s' s'' (errs' ++ er))
+                            let er' = if Abs.PropertiesNil == props
+                                      then ""
+                                      else "Error: This version of Aesir only supports models consisting of one automaton.\n"
+                            --(p,env'') <- getProperty props enms env' scope
+                            let p     = PNIL
+                            let env'' = env'
+                            pass $ return ((), \s -> mkErrTuple s xs s' s'' (errs' ++ er ++ er'))
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
@@ -479,14 +486,24 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                             let name = annotatedState sts
                             let ip''' = ipStn %~ (const name) $ ip''
                             let env'' = env' { initprop = ip''' }
-                            (p,env''') <- getProperty props enms env'' scope
-                            pass $ return ((), \s -> mkErrTuple s xs s' s'' errs')
+                            --(p,env''') <- getProperty props enms env'' scope
+                            let er' = if Abs.PropertiesNil == props
+                                      then ""
+                                      else "Error: This version of Aesir only supports models consisting of one automaton.\n"
+                            let p      = PNIL
+                            let env''' = env''
+                            pass $ return ((), \s -> mkErrTuple s xs s' s'' (errs' ++ er'))
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
                                              , pProps       = p },env''')
-               else do (p,env'') <- getProperty props enms env' scope
-                       pass $ return ((), \s -> mkErrTuple s xs s' s'' errs')
+               else do --(p,env'') <- getProperty props enms env' scope
+                       let er' = if Abs.PropertiesNil == props
+                                 then ""
+                                 else "Error: This version of Aesir only supports models consisting of one automaton.\n"
+                       let p     = PNIL
+                       let env'' = env'
+                       pass $ return ((), \s -> mkErrTuple s xs s' s'' (errs' ++ er'))
                        return (Property { pName        = pname
                                         , pStates      = states'
                                         , pTransitions = t
@@ -685,8 +702,10 @@ getForeaches Abs.ForeachesNil ctxt _ =
  do env <- get    
     put env { actes = actes env ++ map show (ctxt ^. actevents)} 
     return ctxt
+getForeaches _ _ _  = fail "Error: This version of Aesir does not support FOREACH constructs.\n"
+{-
 getForeaches (Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ (Abs.ForeachesDef args actxt fors)) afors) _ _ = 
- fail "Error: StaRVOOrS does not support nested Foreaches.\n"
+ fail "Error: Aesir does not support nested Foreaches.\n"
 getForeaches afors@(Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ Abs.ForeachesNil) _) ctxt scope = 
  let afors' = prepareForeaches afors
  in do env <- get
@@ -694,6 +713,7 @@ getForeaches afors@(Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ Abs.ForeachesNil) _) ct
        fors <- sequence $ map (uncurry getForeach) (zip afors' (createIds scope afors'))
        env' <- get
        return (foreaches .~ fors $ ctxt)
+-}
 
 prepareForeaches :: Abs.Foreaches -> [Abs.Foreaches]
 prepareForeaches Abs.ForeachesNil                  = []
@@ -717,7 +737,7 @@ getForeach (Abs.ForeachesDef args ctxt Abs.ForeachesNil) id =
                let Args t cl = head $ args'               
                put env { propInForeach = (propn,t,cl):propInForeach env }               
                return $ Foreach args' ctxt' id
-      _  -> fail $ "Error: StaRVOOrS does not support nested Foreaches.\n"
+      _  -> fail $ "Error: Aesir does not support nested Foreaches.\n"
 
 
 ---------------
@@ -727,10 +747,13 @@ getForeach (Abs.ForeachesDef args ctxt Abs.ForeachesNil) id =
 genTemplates :: Abs.Templates -> UpgradeModel Templates
 genTemplates Abs.TempsNil   = return TempNil
 genTemplates (Abs.Temps xs) = 
+ fail "Error: This version of Aesir does not support the use of TEMPLATES.\n"
+{-
  do xs <- sequence $ map genTemplate xs
     env <- get
     put env { tempsInfo = tempsInfo env ++ foldr (\ x xs -> (x ^. tempId, x ^. tempBinds) : xs) [] xs}
     return $ Temp xs 
+-}
 
 --TODO: If templates added to the model, modify to check whether initial prop is not annotated in
 --multiple scopes, and add the scope to the initprop component if the initial prop is only annotated in a template
@@ -996,7 +1019,7 @@ annotatedState (s:ss) =
 data Env = Env
  { allTriggers     :: [TriggersInfo]
  , javaFilesInfo   :: [(JPath, ClassInfo, JavaFilesInfo)]
- , varsInModel       :: Variables                    
+ , varsInModel     :: Variables                    
  , tempsInfo       :: [(Id,[Args])]--[(name_template, args_of_template)]
  , propInForeach   :: [(PropertyName, ClassInfo, String)]-- is used to avoid ambigous reference to variable id in foreaches
  , actes           :: [Id] --list of all defined action events

@@ -14,7 +14,6 @@ reachabilityAnalysis umodel =
          PNIL -> return Map.empty
          prop -> return $ createMapping prop ip
 
-
 lookforProp :: Model -> IPropInfo -> Property
 lookforProp model ip = 
  case ip ^. ipScope of

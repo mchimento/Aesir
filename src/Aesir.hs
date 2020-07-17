@@ -20,7 +20,7 @@ import BRTComputation
 -------------
 
 version :: String
-version = "Aesir "
+version = "Aesir 0.0.0.0"
 
 -- version meaning   +--------- version ID
 --                   | +------- version ID
@@ -104,13 +104,11 @@ run flags java_fn_add model_fn output_add =
                               Ok _  -> do if null (wellFormedActions model)
                                           then do reachMap <- reachabilityAnalysis model
                                                   if Map.null reachMap
-                                                  then putStrLn failReachAnalysis
-                                                  else putStrLn "Aesir has finished successfully.\n"
+                                                  then putStrLn "Error: Reachability analysis has failed.\n"
+                                                  else do putStrLn "Reachability analysis... [DONE]"
+                                                          brt <- computeBRT model reachMap
+                                                          putStrLn "Aesir has finished successfully.\n"
                                           else putStrLn (wellFormedActions model)
-
-
-failReachAnalysis :: String
-failReachAnalysis = "Error: Map computation in the reachability analysis has failed.\n"
 
 -------------------------
 -- Auxiliary Functions --
