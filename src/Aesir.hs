@@ -16,6 +16,7 @@ import UpgradeAesir
 import ReachabilityAnalysis
 import TCInference
 import BRTComputation
+import Java.JavaFilesAnalysis
 
 -------------
 -- Version --
@@ -116,17 +117,20 @@ run flags stToReach iter java_fn_add model_fn output_add =
                          let model = upgradeModel absmodel
                          case runStateT model emptyEnv of
                               Bad s -> putStrLn s
-                              Ok _  -> do if null (wellFormedActions model)
-                                          then if elem stToReach (sts $ getEnvVal model)
+                              Ok _  -> do model' <- javaStaticAnalysis model java_fn_add' flags
+                                          if null (wellFormedActions model')
+                                          then if elem stToReach (sts $ getEnvVal model')
                                                then do reachMap <- reachabilityAnalysis model
                                                        if Map.null reachMap
                                                        then putStrLn "Error: Reachability analysis has failed.\n"
                                                        else do putStrLn "Reachability analysis... [DONE]"
-                                                               brt <- computeBRT model reachMap iter stToReach
+                                                               brt <- computeBRT model' reachMap iter stToReach java_fn_add output_add'
+                                                               tcInference
+                                                               --removeDirectoryRecursive (output_add' ++ "workspace") 
                                                                putStrLn "Aesir has finished successfully.\n"
                                                else putStrLn $ "Error: Argument " ++ stToReach
                                                                 ++ " is not a state of the model.\n" 
-                                          else putStrLn (wellFormedActions model)
+                                          else putStrLn (wellFormedActions model')
 
 -------------------------
 -- Auxiliary Functions --
