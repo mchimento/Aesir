@@ -23,16 +23,8 @@ fromCInvariant2JML (CI _ body) =
 -- Hoare Triples --
 -------------------
 
-{-
-getHTs :: UpgradeModel CModel -> HTjml
-getHTs = genJMLConstsAll'
-
-genJMLConstsAll' :: UpgradeModel CModel -> HTjml
-genJMLConstsAll' ppd = 
- let ppdate = getValue ppd
-     cs     = ppdate ^. htsGet
- in map (over _4 (\ y -> "  /*@ \n" ++ y ++ "    @*/\n")) $ genJMLConsts' cs []
--}
+getHTs :: HTriples -> HTjml
+getHTs cs = map (over _4 (\ y -> "  /*@ \n" ++ y ++ "    @*/\n")) $ genJMLConsts' cs []
 
 genJMLConsts' :: HTriples -> HTjml -> HTjml
 genJMLConsts' [] xs     = xs

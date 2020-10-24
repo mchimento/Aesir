@@ -1,0 +1,50 @@
+-------------------------------------
+-- JML Boolean Expressions Grammar --
+-------------------------------------
+
+JMLAnd. JML ::= JML "&&" JML ;
+JMLOr. JML ::= JML "||" JML ;
+JMLImp. JML ::= JML "==>" JML ;
+JMLIff. JML ::= JML "<==>" JML ;
+JMLForallRT. JML ::= "(" "\\forall" Type IdJml BodyF ")" ;
+JMLExistsRT. JML ::= "(" "\\exists" Type IdJml BodyF ")" ;
+JMLPar. JML ::= "(" JML ")" ;
+JMLNeg. JML ::= Symbols JML ;
+JMLExp. JML ::= [Expression] ;
+separator nonempty Expression "";
+
+BodyF. BodyF ::= ";" RangeTerm ;
+
+RangeTerm. RangeTerm ::= JML ";" JML ;
+OnlyRange. RangeTerm ::= JML ;
+
+Type. Type ::= IdJml ;
+
+Exp. Expression ::= IdJml ;
+ExpS. Expression ::= Symbols ;
+ExpRes. Expression ::= "\\result" ;
+ExpOld. Expression ::= "\\old" "(" JML ")" ;
+ExpTypeOf. Expression ::= "\\typeof" "(" JML ")" ;
+ExpType. Expression ::= "\\type" "(" JML ")" ;
+ExpInv. Expression ::= "\\invariant_for" "(" JML ")" ;
+ExpDls. Expression ::= "\\dl_strContent" "(" Content ")" ;
+ExpMC. Expression ::= MethodCall ;
+ExpPar. Expression ::= "(" [Expression] ")" ;
+
+MC. MethodCall ::= IdJml "(" [Args] ")";
+separator Args ",";
+
+ArgsId. Args ::= IdJml ;
+ArgsS. Args ::= String ;
+
+ContentStr. Content ::= String ;
+ContentId. Content ::= IdJml ;
+ContentMC. Content ::= MethodCall ;
+
+-------------------------
+-- Tokens and Comments --
+-------------------------
+
+token IdJml ((letter | digit) (letter | digit | '_')*) ;
+
+token Symbols ('+' | '/' | '>' | '<' | '-' | '"' | '^' | '?' | '~' | ':' | '%' | '='|'.'| '[' | ']' | '*' | '!') ;

@@ -1,0 +1,18 @@
+v = 0 ; k.lo() ;
+foo(o.l) ; gp(1,de) ; s::c.size(s::o) ;
+\gen(ec) ; \create(tmp,args) ;
+IF (b1 && b2) THEN ; IF (b) THEN { b = true ; h = 0 ;};
+IF (b1 == b1) THEN a = 0 ;
+IF (!( (b1) == (b6 || t))) THEN a = 0 ;
+\log("aaa \n") ; \log("ddd %d %d", n1,n2) ;
+v = c ; a[4] = true; 
+t = m() ; k = foo.foo(g); 
+v = new Integer (2) ;
+i = i++; j = 9 + 9 - 2;
+r = "fefe" ;
+System.out.printf("test");
+System.out.printf("%d and %b",i,u);
+size--; kj++ ; --c ; ++g; k += 6 ; l -= 89;
+startChannel.send(new Pair(s,c)) ;  \create(brew_tmp,cm,new Integer(7), { \log("Ojojoj") ; \log("Ojojoj") ; } ) ;
+ \create(brew_tmp,cm,new Integer(7), IF (b) THEN \log("Ojojoj")) ;
+ \create(brew, f.getUser().getAccount().foo()) ;

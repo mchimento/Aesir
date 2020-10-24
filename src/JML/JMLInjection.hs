@@ -1,4 +1,4 @@
-module JML.JMLInjection(injectJMLannotations) where
+module JML.JMLInjection(injectJMLinitial) where
 
 import Types
 import JML.JMLGenerator
@@ -11,36 +11,38 @@ import Java.JavaLanguage
 import System.IO
 import Control.Lens hiding(Context,pre)
 
--------------------------------------------------
--- Injecting JML annotations for Hoare triples --
--------------------------------------------------
+---------------------------------------
+-- Injecting Initial JML annotations --
+---------------------------------------
 
-injectJMLannotations :: UpgradeModel CModel -> FilePath -> FilePath -> IO ()
-injectJMLannotations ppd jpath output_addr = 
- let toAnalyse_add = output_addr ++ "workspace/files2analyse"
- in do prepareTmpFiles ppd toAnalyse_add jpath
-       return ()
-
-------------------------------------- 
--- Generating annotated temp files --
--------------------------------------
-
-prepareTmpFiles :: UpgradeModel CModel -> FilePath -> FilePath -> IO [()]
-prepareTmpFiles ppd output_add jpath = 
- do let (model, env) = fromOK $ runStateT ppd emptyEnv
+injectJMLinitial :: UpgradeModel CModel -> FilePath -> FilePath -> IO ()
+injectJMLinitial m jpath toAnalyse_add = 
+ do let (model, env)  = fromOK $ runStateT m emptyEnv
     let imports       = model ^. importsGet
     let cinvs         = model ^. cinvariantsGet
     let ys            = splitCInvariants cinvs []
---    let consts        = model ^. htsGet
---    let xs            = splitClassHT consts
---    let join_xs       = joinClassHT xs []
     let jinfo         = javaFilesInfo env
-    --let consts_jml    = getHTs ppd
     let imports'      = [i | i <- imports,not (elem ((\ (Import s) -> s) i) importsInKeY)]
-    return []
-    --sequence $ map (\ i -> annotateTmpFiles i output_add jpath jinfo ys join_xs consts_jml) imports'
+    sequence_ $ map (\ i -> annotateTmpFiles i toAnalyse_add jpath jinfo ys) imports'
 
 
+annotateTmpFiles :: Import -> FilePath -> FilePath -> [(String, ClassInfo, JavaFilesInfo)] 
+                    -> [(Class, CInvariants)]
+                    -> IO ()
+annotateTmpFiles i output_add jpath jinfo ys = 
+  do (main, cl) <- makeAddFile i
+     let jpath'      = jpath ++ "/" ++ main
+     let output_add' = output_add ++ "/" ++ main
+     createDirectoryIfMissing True output_add'
+     let file        = jpath' ++ "/" ++ (cl ++ ".java")  
+     let tmp         = output_add' ++ "/" ++ (cl ++ ".java")
+     r <- readFile file
+     let cinvs      = generateTmpFileCInv cl ys r
+     let nullable   = updateTmpFileCInv cl jinfo cinvs
+     let specPublic = updateSpecPublic cl jinfo nullable
+     writeFile tmp specPublic     
+
+{-
 annotateTmpFiles :: Import -> FilePath -> FilePath -> [(String, ClassInfo, JavaFilesInfo)] 
                     -> [(Class, CInvariants)] -> [(ClassInfo, [HTName])] 
                     -> HTjml -> IO ()
@@ -57,7 +59,8 @@ annotateTmpFiles i output_add jpath jinfo ys jxs consts_jml =
      let nullable   = updateTmpFileCInv cl jinfo cinvs
      let specPublic = updateSpecPublic cl jinfo nullable
      let contracts  = genTmpFilesConst (main,cl) consts_jml specPublic
-     writeFile tmp contracts     
+     writeFile tmp contracts  
+-}
 
 ---------------------------------------------
 -- Injecting JML annotations for contracts --

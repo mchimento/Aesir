@@ -1,0 +1,30 @@
+------------------
+-- Java Grammar --
+------------------
+
+--Including all Java separators and operators according to Java Language Specification (Chap. 3)
+
+JavaId. Java ::= Id Java ;
+JavaSymb. Java ::= Symbols Java ;
+JavaInt. Java ::= Integer Java ;
+JavaDouble. Java ::= Double Java ;
+JavaTimes. Java ::= "*" Java ;
+JavaDot. Java ::= "." Java ;
+JavaBrack. Java ::= "{" Java "}" Java ;
+JavaParent. Java ::= "(" Java ")" Java ;
+JavaCorchete. Java ::= "[" Java "]" Java ;
+JavaEq. Java ::= "=" Java ;
+JavaSemiColon. Java ::= ";" Java ;
+JavaBSlash. Java ::= "\\" Java ;
+JavaComma. Java ::= "," Java ;
+JavaSlash. Java ::= "/" Java ;
+JavaBar. Java ::= "|" Java ;
+JavaNil. Java ::= ;
+
+-------------------------
+-- Tokens and Comments --
+-------------------------
+
+token Id (letter (letter | digit | '_')*) ;
+
+token Symbols ('+' | '/' | '>' | '<' | '-' | '&' | '!' | '"' | '^' | '?' | '~' | ':' | '%') ;

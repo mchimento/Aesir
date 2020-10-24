@@ -1,0 +1,69 @@
+---------------------
+-- Actions Grammar --
+---------------------
+
+Actions. Actions ::= [Action];
+terminator Action ";";
+
+ActProg. Action ::= Program ;
+ActBlock. Action ::= "{" Actions "}" ;
+ActCreate. Action ::= "\\create" "(" Template "," [Args] ")" ;
+ActBang. Action ::= "\\gen" "(" IdAct ")";
+ActCond. Action ::= "IF" "(" [Cond] ")" "THEN" Action ;
+ActSkip. Action ::= ;
+ActLog. Action ::= "\\log" "(" String Params ")";
+ActArith. Action ::= Arith ; 
+ActAssig. Action ::= Ass ;
+separator IdAct "" ;
+
+Prog. Program ::= IdAct "(" [Args] ")" InnerProg ;
+separator Args ",";
+
+IProg. InnerProg ::= IdAct "(" [Args] ")" InnerProg ;
+IPNil. InnerProg ::= ;  
+
+Ass. Ass ::= IdAct "=" Val ;
+AssInc. Ass ::= IdAct "+=" Val ;
+AssDec. Ass ::= IdAct "-=" Val ;
+
+Arith. Arith ::= IdAct ;
+
+ValMC. Val ::= Program ; 
+ValV. Val ::= IdAct Val ;
+ValS. Val ::= String ;
+ValNew. Val ::= "new" Val ;
+ValNil. Val ::= ;
+
+TypeNil. Type ::= ;
+Type. Type ::= IdAct ;
+
+Temp. Template ::= IdAct ;
+
+ArgsId. Args ::= IdAct ;
+ArgsS. Args ::= String ;
+ArgsNew. Args ::= "new" Program ;
+ArgsActLog. Args ::= "\\log" "(" String Params ")" ;
+ArgsActIF. Args ::= "IF" "(" [IdAct] ")" "THEN" Action ;
+ArgsInner. Args ::= Program ;
+ArgsActBang. Args ::= "\\gen" "(" IdAct ")" ;
+ArgsActAss. Args ::= Ass ;
+ArgsActBlock. Args ::= "{" Actions "}" ; 
+
+ParamsNil. Params ::= ;
+Params. Params ::= "," [Param] ;
+separator nonempty Param "," ;
+
+Param. Param ::= IdAct ;
+
+Cond. Cond ::= IdAct ;
+CondPar. Cond ::= "(" [Cond] ")" ;
+separator Cond "" ;
+
+-------------------------
+-- Tokens and Comments --
+-------------------------
+
+token IdAct ((letter | digit | '*' | '+' | '>' | '<' | '=' | '-' | '&' | '!' | '^' | '?' | '~' | ':' | '%' | '_' | '[' | ']' | '.' | '|')+) ;
+
+
+comment "%%" ;

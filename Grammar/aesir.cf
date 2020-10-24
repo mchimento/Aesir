@@ -1,0 +1,283 @@
+-------------------
+-- Model Grammar --
+-------------------
+
+AbsModel. AbsModel ::= Imports Model Templates CInvariants IProp Methods ;
+
+---------------------
+-- Section IMPORTS --
+---------------------
+
+Imports. Imports ::= "IMPORTS" "{" [Import] "}";
+ImportsNil. Imports ::= ;
+Import. Import ::= "import" [JavaFiles] ;
+
+JavaFiles. JavaFiles ::= Id ;
+
+separator nonempty JavaFiles "." ;
+terminator nonempty Import ";" ;
+
+-------------------
+-- Section Model --
+-------------------
+
+Model. Model ::= "MODEL" "{" Context "}";
+
+Ctxt. Context ::= Variables ActEvents Triggers Properties Foreaches ;
+
+--
+-- Variables --
+--
+
+VarNil. Variables ::= ;
+VarDef. Variables ::= "VARIABLES" "{" [Variable] "}" ;
+terminator Variable ";" ;
+
+Var. Variable ::= VarModifier Type [VarDecl] ;
+
+VarModifierFinal. VarModifier ::= "final" ;
+VarModifierNil. VarModifier ::= ;
+
+--
+-- ActEvents --
+--
+
+ActEventsNil. ActEvents ::= ;
+ActEventsDef. ActEvents ::= "ACTEVENTS" "{" [ActEvent] "}" ;
+separator nonempty ActEvent "," ;
+
+ActEvent. ActEvent ::=  Id;
+
+--
+-- Triggers --
+--
+
+TriggersNil. Triggers ::= ; 
+TriggersDef. Triggers ::= "TRIGGERS" "{" [Trigger]  "}" ;
+separator nonempty Trigger "" ;
+separator Vars "," ;
+
+Trigger. Trigger ::= Id "(" [Bind] ")" "=" CompoundTrigger WhereClause ;
+separator Bind "," ;
+
+Collection. CompoundTrigger ::= TriggerList ;
+NormalEvent. CompoundTrigger ::= "{" Binding Id "(" [Vars] ")" "}" ;
+--ClockEvent. CompoundTrigger ::= "{" Id Timeout Integer "}" ;
+OnlyId. CompoundTrigger ::= "{" Id "}";
+OnlyIdPar. CompoundTrigger ::= "{" Id "(" ")" "}";
+
+--At. Timeout ::= "@" ;
+--AtRep. Timeout ::= "@%" ;
+
+CECollection. TriggerList ::= "{" [CEElement] "}"  WhereClause ;
+separator CEElement "|" ;
+
+CEct. CEElement ::= CompoundTrigger ;
+CEid. CEElement ::= Id ;
+CEidpar. CEElement ::= Id "(" ")" ;
+
+BindingVar. Binding ::= Bind "." ;
+
+BindStar. Bind ::= "*" ;
+BindType. Bind ::= Type Id ;
+BindId. Bind ::= Id ;
+BindStarExec. Bind ::= "execution" "*";
+BindStarCall. Bind ::= "call" "*";
+BindTypeExec. Bind ::= "execution" Type Id;
+BindTypeCall. Bind ::= "call" Type Id;
+BindIdExec. Bind ::= "execution" Id;
+BindIdCall. Bind ::= "call" Id;
+
+
+WhereClauseNil. WhereClause ::= ;
+WhereClauseDef. WhereClause ::= "where" "{" [WhereExp] "}";
+terminator nonempty WhereExp ";" ;
+
+WhereExp. WhereExp ::= Bind "=" VarExp ;
+Vars. Vars ::= Bind ;
+
+--
+-- Properties --
+--
+
+PropertiesNil. Properties ::= ;
+ProperiesDef. Properties ::= "PROPERTY" Id "{" PropKind "}" Properties; 
+
+PropKindNormal. PropKind ::= States Transitions ;
+
+States. States ::= "STATES" "{" Starting Accepting Bad Normal "}" ;
+
+AcceptingNil. Accepting ::= ;
+AcceptingDef. Accepting ::= "ACCEPTING" "{" [State] "}" ;
+terminator State ";" ;
+
+BadNil. Bad ::= ;
+BadDef. Bad ::= "BAD" "{" [State] "}" ;
+
+NormalNil. Normal ::= ;
+NormalDef. Normal ::= "NORMAL" "{" [State] "}" ;
+
+StartingDef. Starting ::= "STARTING" "{" [State] "}" ;
+
+State. State ::= NameState InitialCode HTNames ;
+NameState. NameState ::= Id ;
+
+CNS. HTNames ::= "(" [HTName] ")" ;
+CNSNil. HTNames ::= ;
+separator nonempty HTName "," ;
+CN. HTName ::= Id ;
+
+InitNil. InitialCode ::=  ;
+InitProg. InitialCode ::= "{" Java "}" ;
+
+
+Transitions. Transitions ::= "TRANSITIONS" "{" [Transition] "}" ;
+separator nonempty Transition "" ;
+
+Transition. Transition ::= NameState "->" NameState "[" Arrow "]" ;
+
+Arrow. Arrow ::= Id Actmark Condition ;
+
+ActMarkNil. Actmark ::= ;
+ActMark. Actmark ::= "?" ;
+
+Cond1. Condition ::= ;
+Cond2. Condition ::= "\\" CondExp Post ;
+
+Post. Post ::= ;
+PostCond. Post ::= "\\" CondExp ;
+PostAct. Post ::= "\\" CondExp "\\" Action ;
+
+Action. Action ::= Expressions ;
+
+
+ForeachesNil. Foreaches ::= ;
+ForeachesDef. Foreaches ::= "FOREACH" "(" [Args] ")" "{" Context "}" Foreaches ;
+
+-----------------------
+-- Section TEMPLATES --
+-----------------------
+
+Temps. Templates ::= "TEMPLATES" "{" [Template] "}";
+TempsNil. Templates ::= ;
+separator Template "";
+
+Temp. Template ::= "TEMPLATE" Id "(" [Args] ")" "{" BodyTemp "}";
+
+Body. BodyTemp ::= Variables ActEvents Triggers Properties ;
+
+-------------------------
+-- Section CINVARIANTS --
+-------------------------
+
+CInvariants. CInvariants ::= "CINVARIANTS" "{" [CInvariant] "}" ;
+CInvempty. CInvariants ::= ;
+separator nonempty CInvariant "" ;
+
+CI. CInvariant ::= Id "{" JML "}" ;
+
+------------------------------
+-- Section Initial Property --
+------------------------------
+
+IProp. IProp ::= "INITPROP" Id "{" JML "}" ;
+
+---------------------
+-- Section Methods --
+---------------------
+
+Methods. Methods ::= "METHODS" "{" BodyMethods "}" ; 
+MethodsNil. Methods ::= ;
+
+BodyMemDecl. BodyMethods ::= [MemberDecl] ;
+BodyImport. BodyMethods ::= ImportFile ;
+separator nonempty MemberDecl "";
+
+MemberDeclMethod. MemberDecl ::= Type Id "(" [Args] ")" "{" Java "}";
+MemberDeclField. MemberDecl ::= VariableDecl ;
+
+VariableDecl. VariableDecl ::= Type [VarDecl] ";";
+separator nonempty VarDecl "," ;
+
+VarDecl. VarDecl ::= Id VariableInitializer ;
+
+VarInit. VariableInitializer ::= "=" VarExp ;
+VarInitNil. VariableInitializer ::= ;
+
+Type. Type ::= TypeDef ;
+
+TypeDef. TypeDef ::= Id ;
+TypeGen. TypeDef ::= Id Symbols [Id] Symbols;
+TypeArray. TypeDef ::= Id "[" "]";
+separator Id "," ;
+
+Args. Args ::= Type Id ;
+separator Args ",";
+
+ImportFile. ImportFile ::= "import" Address  ";" ;
+
+Address. Address ::= Id "/" Add ;
+AddBar. Add ::= Id "/" Add;
+AddId. Add ::= Id;
+
+------------------
+-- Useful Types --
+------------------
+
+CondExpId. CondExp ::= Id CondExp ;
+CondExpSymb. CondExp ::= Symbols CondExp ;
+CondExpInt. CondExp ::= Integer CondExp ;
+CondExpDouble. CondExp ::= Double CondExp ;
+CondExpTimes. CondExp ::= "*" CondExp ;
+CondExpParent. CondExp ::= "(" CondExp ")" CondExp ;
+CondExpDot. CondExp ::= "." CondExp ;
+CondExpCorchete. CondExp ::= "[" CondExp "]" CondExp ;
+CondExpComma. CondExp ::= "," CondExp ;
+CondExpSlash. CondExp ::= "/" CondExp ;
+CondExpEq. CondExp ::= "=" CondExp ;
+CondExpBar. CondExp ::= "|" CondExp ;
+CondExpNil. CondExp ::= ;
+
+VarExpId. VarExp ::= Id VarExp ;
+VarExpSymb. VarExp ::= Symbols VarExp ;
+VarExpInt. VarExp ::= Integer VarExp ;
+VarExpDouble. VarExp ::= Double VarExp ;
+VarExpTimes. VarExp ::= "*" VarExp ;
+VarExpParent. VarExp ::= "(" VarExp ")" VarExp ;
+VarExpBrack. VarExp ::= "{" VarExp "}" VarExp ;
+VarExpDot. VarExp ::= "." VarExp ;
+VarExpComma. VarExp ::= "," VarExp ;
+VarExpCorchete. VarExp ::= "[" VarExp "]" VarExp ;
+VarExpSlash. VarExp ::= "/" VarExp ;
+VarExpBar. VarExp ::= "|" VarExp ;
+VarExpNil. VarExp ::= ;
+
+ExpId. Expressions ::= Id Expressions ;
+ExpSymb. Expressions ::= Symbols Expressions ;
+ExpInt. Expressions ::= Integer Expressions ;
+ExpDouble. Expressions ::= Double Expressions ;
+ExpTimes. Expressions ::= "*" Expressions ;
+ExpDot. Expressions ::= "." Expressions ;
+ExpBrack. Expressions ::= "{" Expressions "}" Expressions ;
+ExpParent. Expressions ::= "(" Expressions ")" Expressions ;
+ExpCorchete. Expressions ::= "[" Expressions "]" Expressions ;
+ExpEq. Expressions ::= "=" Expressions ;
+ExpSemiColon. Expressions ::= ";" Expressions ;
+ExpBSlash. Expressions ::= "\\" Expressions ;
+ExpComma. Expressions ::= "," Expressions ;
+ExpSlash. Expressions ::= "/" Expressions ;
+ExpBar. Expressions ::= "|" Expressions ;
+ExpNil. Expressions ::= ;
+
+Java. Java ::= Expressions ;
+JML. JML ::= Expressions ;
+
+-------------------------
+-- Tokens and Comments --
+-------------------------
+
+token Id (letter (letter | digit | '_')*) ;
+
+token Symbols ('+' | '/' | '>' | '<' | '-' | '&' | '!' | '"' | '^' | '?' | '~' | ':' | '%') ;
+
+comment "%%" ;

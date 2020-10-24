@@ -1,0 +1,63 @@
+IMPORTS {
+import main.HashTable;
+import main.UserInterface;
+import main.Account;
+}
+
+MODEL {
+
+TRIGGERS {
+login_exit(String un, int pwd,UserInterface f) = {f.login(un, pwd)}
+logout_entry() = {UserInterface f.logout()}
+deposit_entry(int money) = {UserInterface f.deposit(money)}
+}
+
+PROPERTY prop_deposit {
+
+STATES
+{
+STARTING { q1 ;}
+BAD { bad ; }
+NORMAL { q2 (deposit_ok) ; }
+}
+
+TRANSITIONS
+{
+q1 -> q2 [login_exit \ f != null && f.getUser() != null \ true ]
+q1 -> bad [deposit_entry]
+q2 -> q1 [logout_entry \ f != null && f.getUser() != null \ true ]
+q2 -> q2 [deposit_entry \ f != null && f.getUser() != null \ true]
+q3 -> q4 [foo \ b ]
+q3 -> q4 [foo \ b \ ]
+q3 -> q4 [foo \ b \ b2 ]
+q3 -> q4 [foo \ b \ b2 \  ]
+q3 -> q4 [foo \ b \ b2 \ act ]
+}
+
+}%%end prop_deposit
+
+} %%end MODEL
+
+CINVARIANTS
+{
+HashTable {\typeof(h) == \type(Object[])}
+HashTable {h.length == capacity}
+HashTable {h != null}
+HashTable {size >= 0 && size <= capacity}
+HashTable {capacity >= 1}
+}
+
+INITPROP deposit_ok { size < capacity && key > 0 }
+
+METHODS {
+
+ int pepeu, palala; 
+
+ boolean check1 (int val, int b) { return 0 ;}
+
+ int gg = 9;
+ boolean check2 (int val, int b) { 
+   if (b == 0) return false ;
+   else {return true ; }
+ }
+}

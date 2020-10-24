@@ -1,0 +1,4 @@
+#!/bin/sh 
+
+bnfc -m $1 ; make ; rm *.o; rm *.hi
+

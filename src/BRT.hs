@@ -17,7 +17,8 @@ data BRT = BRT
  , _prop      :: JMLExp    --FOL formula in root, or backtracked condition
  , _method    :: Maybe (Trigger, [Bind])--(method_executed_to_reach_parent,methods_arguments)
  , _iter      :: Integer --allowed amount of iterations for the loops
- } deriving (Eq,Read)
+ , _idBrt     :: String --Node identifier
+ } | BNil deriving (Eq,Read)
 
 
 ------------

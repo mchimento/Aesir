@@ -1,0 +1,12 @@
+a && b || (c && !b) ==> m <==> m && (1 < 2) ||
+\result > 6 && \old(x) == x+1 ==>  (\forall int y ; y >= 0 && y < 20 ; y == \old(x))
+|| limit == \old(limit+y+foo.goo.goo()) && (\exists int y ; c == \result)
+&& \dl_strContent(s) == \dl_strContent("h") && (\forall b y ; b) && a[f] == p && h[*]
+|| \typeof(h) == \type(Object[]) && h != null
+&& ( \exists int i ; i >= 0 && i < capacity ; h[i]== u)
+&& m != null && checkSameTransaction(m) == SWResponses.SW_SUCCESS
+             && transaction.value <= (short) (ShortMaxValue - balance)
+&& \invariant_for(Integer)
+&& true && c && true && !(bb && y)
+&& (status == ProtocolStatus.Epr ==> (\result == SWResponses.SW_SUCCESS && (balance == \old(balance)-transaction.value)
+        && status == ProtocolStatus.Epa))
