@@ -44,7 +44,7 @@ createMapping (Property _ sts trs _) ip =
 getTransForSt :: State -> Transitions -> (NameState,Transitions)
 getTransForSt s []     = (s ^. getNS,[])
 getTransForSt s (t:ts) = 
- if (fromState t == s ^. getNS)
+ if (toState t == s ^. getNS)
  then let (ns,ts') = getTransForSt s ts
       in (ns,t:ts')
  else getTransForSt s ts

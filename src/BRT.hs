@@ -18,7 +18,7 @@ data BRT = BRT
  , _method    :: Maybe (Trigger, [Bind])--(method_executed_to_reach_parent,methods_arguments)
  , _iter      :: Integer --allowed amount of iterations for the loops
  , _idBrt     :: String --Node identifier
- } | BNil deriving (Eq,Read)
+ } | BNil deriving (Eq,Read,Show)
 
 
 ------------
