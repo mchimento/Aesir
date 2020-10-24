@@ -233,13 +233,14 @@ transActmark x = case x of
 transCondition :: Condition -> Result
 transCondition x = case x of
   Cond1  -> failure x
-  Cond2 cond  -> failure x
+  Cond2 condexp post  -> failure x
 
 
-transCond :: Cond -> Result
-transCond x = case x of
-  CondExpDef condexp  -> failure x
-  CondAction condexp action  -> failure x
+transPost :: Post -> Result
+transPost x = case x of
+  Post  -> failure x
+  PostCond condexp  -> failure x
+  PostAct condexp action  -> failure x
 
 
 transAction :: Action -> Result

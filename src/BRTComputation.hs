@@ -52,7 +52,7 @@ brt t mp iter =
 ---------------------------
 
 mkHT :: Transition -> HT
-mkHT (Transition q (Arrow tr c _) q') = undefined
+mkHT (Transition q (Arrow tr c _ _) q') = undefined
 
 mkHT' :: IProp -> HT
 mkHT' ip = 

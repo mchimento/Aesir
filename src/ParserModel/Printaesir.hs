@@ -370,13 +370,14 @@ instance Print Actmark where
 instance Print Condition where
   prt i e = case e of
    Cond1  -> prPrec i 0 (concatD [])
-   Cond2 cond -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 cond])
+   Cond2 condexp post -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 condexp , prt 0 post])
 
 
-instance Print Cond where
+instance Print Post where
   prt i e = case e of
-   CondExpDef condexp -> prPrec i 0 (concatD [prt 0 condexp])
-   CondAction condexp action -> prPrec i 0 (concatD [prt 0 condexp , doc (showString "\\") , prt 0 action])
+   Post  -> prPrec i 0 (concatD [])
+   PostCond condexp -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 condexp])
+   PostAct condexp action -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 condexp , doc (showString "\\") , prt 0 action])
 
 
 instance Print Action where

@@ -185,12 +185,13 @@ data Actmark =
 
 data Condition =
    Cond1
- | Cond2 Cond
+ | Cond2 CondExp Post
   deriving (Eq,Ord,Show,Read)
 
-data Cond =
-   CondExpDef CondExp
- | CondAction CondExp Action
+data Post =
+   Post
+ | PostCond CondExp
+ | PostAct CondExp Action
   deriving (Eq,Ord,Show,Read)
 
 data Action =

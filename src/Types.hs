@@ -336,13 +336,14 @@ type Cond    = String
 type Action  = String
 
 data Arrow = Arrow 
-  { trigger :: Trigger
-  , cond    :: Cond
-  , action  :: Action
+  { trigger  :: Trigger
+  , precond  :: Cond
+  , postcond :: Cond
+  , action   :: Action
   } deriving (Eq,Read)
 
 instance Show Arrow where
- show (Arrow tr c act) = " [" ++ tr ++ " \\ "  ++ c ++ " \\ " ++ (concat.lines) act ++ " ]"
+ show (Arrow tr pre post act) = " [" ++ tr ++ " \\ "  ++ pre ++ " \\ " ++ post ++ " \\ " ++ (concat.lines) act ++ " ]"
 
 data Transition = Transition 
   { fromState :: NameState
