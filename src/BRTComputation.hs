@@ -106,9 +106,8 @@ getExecutableDir =
     let xs = splitOnIdentifier "/" expath
     return (intercalate "/" $ init xs)
 
-runKeY :: FilePath -> FilePath -> IO ()--IO ExitCode
+runKeY :: FilePath -> FilePath -> IO ExitCode
 runKeY output_add' output_addr = 
  do expath <- getExecutableDir
-    putStrLn (expath++"/KeY")
-    --rawSystem "java" ["-jar",expath++"/key.starvoors.jar","-starvoors",output_add', output_addr]
+    rawSystem "java" ["-jar",expath++"/KeY/key.starvoors.jar","-starvoors",output_add', output_addr]
 

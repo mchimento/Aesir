@@ -1,0 +1,62 @@
+IMPORTS {
+import main.ConPurse;
+import main.Messages;
+import main.SWResponses;
+}
+
+MODEL {
+
+VARIABLES
+{
+ConPurse pfrom;
+ConPurse pto;
+short pvalue;
+}
+
+TRIGGERS {
+start_from_operation (Messages m, short ret) = {ConPurse sender.start_from_operation(m)exit(ret)}
+req_operation (Messages m, short ret) = {ConPurse sender.req_operation(m)exit(ret)}
+ack_operation (Messages m, short ret) = {ConPurse sender.ack_operation(m)exit(ret)}
+}
+
+
+PROPERTY sender_purse {
+
+STATES
+{
+STARTING { awaiting_from ; }
+ACCEPTING { foo ; }
+NORMAL { awaiting_from ; 
+         parties_initialised ;
+         money_deducted ;
+         end_transaction
+       }
+}
+
+TRANSITIONS
+{
+awaiting_from -> parties_initialised [m.label == StartFrom && m.id == sender.name 
+                                      \ start_from_operation \ ret == SWResponses.SW_SUCCESS]
+
+parties_initialised -> money_deducted [ m.label == Req && m.id == sender.name && m.paydetails.value == pvalue 
+                                        \ req_operation \ ret == SWResponses.SW_SUCCESS ]
+
+money_deducted -> end_transaction [m.label == Ack && m.id == sender.name \ ack_operation \ ret == SWResponses.SW_SUCCESS ]
+}
+} %%end of PROPERTY
+
+} %% end of MODEL
+
+
+CINVARIANTS
+{
+ConPurse {(exLog != null) && (exLog.length > 0)}
+ConPurse {(logIdx >= 0) && (logIdx <= exLog.length)}
+ConPurse {(balance >= 0) && (balance <= ShortMaxValue)}
+ConPurse {(nextSeq >= 0) && (nextSeq <= ShortMaxValue)}
+ConPurse {(status >= 0) && (status <= 5)}
+ConPurse {(transaction != null) && (transaction.value >= 0)}
+ConPurse {(\forall int i; i>=0 && i<25; exLog[i] != null)}
+ConPurse {name > 0}
+}
+
