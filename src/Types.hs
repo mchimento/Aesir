@@ -277,6 +277,7 @@ data TriggersInfo =
     , tiMN      :: MethodName --method_name
     , tiCI      :: ClassInfo --class_type
     , tiCVar    :: String --class_variable_name
+    , tiTrvar   :: TriggerVariation
     , tiBinds   :: [Bind]
     , tiTrDef   :: Maybe TriggerDef
     , tiScope   :: Scope
@@ -398,23 +399,36 @@ showWhere [] = ""
 showWhere xs = " where { " ++ xs ++ " }"
 
 data CompoundTrigger =
-   NormalEvent Binding Id [Bind]
+   NormalEvent Binding Id [Bind] TriggerVariation
  | OnlyId Id
  | OnlyIdPar Id
  | Collection TriggerList
   deriving (Eq,Read)
 
 updCEne :: CompoundTrigger -> Binding -> CompoundTrigger
-updCEne (NormalEvent bind id bs) bind' = NormalEvent bind' id bs
+updCEne (NormalEvent bind id bs tv) bind' = NormalEvent bind' id bs tv
 
 instance Show CompoundTrigger where
- show (NormalEvent b id binds) = show b ++ "." ++ id ++ "(" ++ intercalate "," (map show binds) ++ ")"
+ show (NormalEvent b id binds tv) = show b ++ "." ++ id ++ "(" ++ intercalate "," (map show binds) ++ ")" ++ show tv
  show (OnlyId id)                 = id
  show (OnlyIdPar id)              = id ++ "()"
  show (Collection tls)            = show tls
 
 getCTArgs :: CompoundTrigger -> [Bind]
-getCTArgs (NormalEvent _ _ bs) = bs
+getCTArgs (NormalEvent _ _ bs _) = bs
+
+data TriggerVariation =
+   EVENil
+ | EVEntry
+ | EVExit [Bind]
+ | EVNil
+  deriving (Eq,Read)
+
+instance Show TriggerVariation where
+ show EVEntry      = "entry"
+ show (EVExit rs)  = "exit(" ++ concatMap show rs ++ ")" 
+ show EVENil       = ""
+ show EVNil       = ""
 
 data TriggerList =
    CECollection [CEElement] WhereClause
@@ -484,12 +498,12 @@ updateMethodCallName :: TriggerDef -> MethodName -> TriggerDef
 updateMethodCallName (TriggerDef e arg cpes wc) mn = TriggerDef e arg (updateCpeMethodName cpes mn) wc
 
 updateCpeMethodName :: CompoundTrigger -> MethodName -> CompoundTrigger
-updateCpeMethodName (NormalEvent bind id bs) id' = NormalEvent bind id' bs
-updateCpeMethodName cpe _                        = cpe
+updateCpeMethodName (NormalEvent bind id bs tv) id' = NormalEvent bind id' bs tv
+updateCpeMethodName cpe _                           = cpe
 
 updateCpeMethodCallBody :: CompoundTrigger -> [Bind] -> CompoundTrigger
-updateCpeMethodCallBody (NormalEvent bind id bs) bs' = NormalEvent bind id bs'
-updateCpeMethodCallBody cpe _                        = cpe
+updateCpeMethodCallBody (NormalEvent bind id bs tv) bs' = NormalEvent bind id bs' tv
+updateCpeMethodCallBody cpe _                           = cpe
 
 updateMethodCallBody :: TriggerDef -> [Bind] -> TriggerDef
 updateMethodCallBody (TriggerDef e arg cpes wc) bs = TriggerDef e arg (updateCpeMethodCallBody cpes bs) wc

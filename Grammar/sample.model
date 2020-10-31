@@ -10,6 +10,7 @@ TRIGGERS {
 login_exit(String un, int pwd,UserInterface f) = {f.login(un, pwd)}
 logout_entry() = {UserInterface f.logout()}
 deposit_entry(int money) = {UserInterface f.deposit(money)}
+start_from_operation (Messages m, short ret) = {ConPurse sender.start_from_operation(m)exit(ret)}
 }
 
 PROPERTY prop_deposit {

@@ -92,7 +92,7 @@ transTrigger x = case x of
 transCompoundTrigger :: CompoundTrigger -> Result
 transCompoundTrigger x = case x of
   Collection triggerlist  -> failure x
-  NormalEvent binding id varss  -> failure x
+  NormalEvent binding id varss triggervariation  -> failure x
   OnlyId id  -> failure x
   OnlyIdPar id  -> failure x
 
@@ -107,6 +107,13 @@ transCEElement x = case x of
   CEct compoundtrigger  -> failure x
   CEid id  -> failure x
   CEidpar id  -> failure x
+
+
+transTriggerVariation :: TriggerVariation -> Result
+transTriggerVariation x = case x of
+  EVENil  -> failure x
+  EVEntry  -> failure x
+  EVExit varss  -> failure x
 
 
 transBinding :: Binding -> Result

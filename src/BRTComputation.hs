@@ -46,7 +46,7 @@ brt cm t mp iter trs jpath out_add =
     then do let toAnalyse_add = out_add ++ "workspace/files2analyse"
             let hts = nameHTS 0 (t ^. idBrt) $ map (mkHT (t ^. prop) trs) $ fromJust ts
             injectJMLannotations cm jpath toAnalyse_add hts
-            runKeY toAnalyse_add out_add
+            --runKeY toAnalyse_add out_add
             putStrLn "Backwards reachability tree computation... [DONE]"
             return t
          else do putStrLn $ "Aesir: Error when computing reachability for the state " 

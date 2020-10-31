@@ -191,37 +191,91 @@ getTrigger' scope (Abs.Trigger id binds ce wc) args =
                     ++ "] uses wrong argument(s) [" ++ s' ++ "] in the method component.\n")
                else err0
     let argss = map getIdBind bs
+    let argss = map getIdBind bs
     case ce' of
-         NormalEvent (BindingVar bind) mn args'
+         NormalEvent (BindingVar bind) mn args' eventv
             -> let allArgs = map getIdBind (filter (\ c -> not (isBindStar c)) args') in
-               let id  = getIdBind bind
-                   wcs = [x | x <- argss, not(elem x allArgs)]
-                   vs  = filter (\ x -> x /= id) $ checkVarsInitialisation wcs (getVarsWC wc)
-               in if ((not.null) vs) 
-                  then fail $ err1 ++ "Error: Missing Initialization of variable(s) " 
-                              ++ show vs ++  " in trigger declaration [" ++ id'' ++ "].\n"
-                  else do let (b,zs)   = runWriter ((checkAllArgs argss allArgs bind))
-                          let (b',s'') = runWriter (checkSpecialCases b mn bind bs [] zs id'' env scope)
-                          if b' 
-                          then if (not.null) err1 
-                               then fail err1 
-                               else do (ci,cinm) <- getClassVarName id'' mn bs bind s'' scope args
-                                       let tr = TriggerDef { _tName = id''
-                                                           , _args  = bs
-                                                           , _compTrigger = ce'
-                                                           , _whereClause = getWhereClause wc
-                                                           }
-                                       let ti = TI id'' mn ci cinm bs (Just tr) scope
-                                       put env { allTriggers = ti : allTriggers env }
-                                       return tr
-                          else fail (err1 ++ s'')
+               case eventv of
+                    EVEntry  ->
+                       let id  = getIdBind bind
+                           wcs = [x | x <- argss, not(elem x allArgs)]
+                           vs  = filter (\ x -> x /= id) $ checkVarsInitialisation wcs (getVarsWC wc)
+                       in if ((not.null) vs) 
+                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) " 
+                                      ++ show vs ++  " in trigger declaration [" ++ id'' ++ "].\n"
+                          else do let (b,zs)   = runWriter ((checkAllArgs argss allArgs bind))
+                                  let (b',s'') = runWriter (checkSpecialCases b mn bind bs [] zs id'' env scope)
+                                  if b' 
+                                  then if (not.null) err1 
+                                       then fail err1 
+                                       else do (ci,cinm) <- getClassVarName id'' mn bs bind s'' scope args
+                                               let tr = TriggerDef { _tName = id''
+                                                                   , _args  = bs
+                                                                   , _compTrigger = ce'
+                                                                   , _whereClause = getWhereClause wc
+                                                                   }
+                                               let ti = TI id'' mn ci cinm EVEntry bs (Just tr) scope
+                                               put env { allTriggers = ti : allTriggers env }
+                                               return tr
+                                  else fail (err1 ++ s'')
+                    EVExit rs ->
+                       let id  = getIdBind bind
+                           wcs = [x | x <- argss, not(elem x allArgs)]
+                           rs' = map getIdBind rs
+                           vs  = filter (\ x -> (not (elem x rs')) && (x /= id)) $ checkVarsInitialisation wcs (getVarsWC wc)
+                       in if ((not.null) vs) 
+                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) " 
+                                      ++ show vs ++ " in trigger declaration [" ++ id'' ++ "].\n"
+                          else do let (b,zs)   = runWriter ((checkAllArgs argss allArgs bind))
+                                  let (b',s'') = runWriter (checkSpecialCases b mn bind bs rs zs id'' env scope)
+                                  if (b' && (checkRetVar rs argss))
+                                  then if (not.null) err1 
+                                       then fail err1 
+                                       else do (ci,cinm) <- getClassVarName id'' mn bs bind s'' scope args
+                                               let tr = TriggerDef { _tName = id''
+                                                                   , _args  = bs
+                                                                   , _compTrigger = ce'
+                                                                   , _whereClause = getWhereClause wc
+                                                                   }
+                                               let ti = TI id'' mn ci cinm (EVExit rs) bs (Just tr) scope
+                                               put env { allTriggers = ti : allTriggers env }
+                                               return tr
+                                  else fail (err1 ++ s'')
+                    EVENil  ->
+                       let id  = getIdBind bind
+                           wcs = [x | x <- argss, not(elem x allArgs)]
+                           vs  = filter (\ x -> x /= id) $ checkVarsInitialisation wcs (getVarsWC wc)
+                       in if ((not.null) vs) 
+                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) " 
+                                      ++ show vs ++  " in trigger declaration [" ++ id'' ++ "].\n"
+                          else do let (b,zs)   = runWriter ((checkAllArgs argss allArgs bind))
+                                  let (b',s'') = runWriter (checkSpecialCases b mn bind bs [] zs id'' env scope)
+                                  if b' 
+                                  then if (not.null) err1 
+                                       then fail err1 
+                                       else do (ci,cinm) <- getClassVarName id'' mn bs bind s'' scope args
+                                               let tr = TriggerDef { _tName = id''
+                                                                   , _args  = bs
+                                                                   , _compTrigger = ce'
+                                                                   , _whereClause = getWhereClause wc
+                                                                   }
+                                               let ti = TI id'' mn ci cinm EVENil bs (Just tr) scope
+                                               put env { allTriggers = ti : allTriggers env }
+                                               return tr
+                                  else fail (err1 ++ s'')
+                    _        -> return TriggerDef { _tName = id''
+                                                  , _args  = bs
+                                                  , _compTrigger = ce'
+                                                  , _whereClause = getWhereClause wc
+                                                  }
          _  -> if (not.null) err1 then fail err1 else
-               do put env { allTriggers = TI id'' "" "" "" bs Nothing scope: allTriggers env }
+               do put env { allTriggers = TI id'' "" "" "" EVENil bs Nothing scope: allTriggers env }
                   return TriggerDef { _tName = id''
                                     , _args  = bs
                                     , _compTrigger = ce'
                                     , _whereClause = getWhereClause wc
                                     }
+
 
 isBindStar :: Bind -> Bool
 isBindStar BindStar     = True
@@ -320,11 +374,12 @@ checkVarsInitialisation (x:xs) wc = if (elem x wc)
 getCompTrigger :: Abs.CompoundTrigger -> Writer String CompoundTrigger
 getCompTrigger ce =
  case ce of
-     Abs.NormalEvent (Abs.BindingVar bind) id binds ->
+     Abs.NormalEvent (Abs.BindingVar bind) id binds tv ->
         case runWriter (getBindsBody (map getVarsAbs binds)) of
-             (bs, s) -> do let id'  = getIdAbs id
+             (bs, s) -> do let id' = getIdAbs id
+                           let tv' = getTriggerVariation tv
                            tell s
-                           return (NormalEvent (BindingVar (getBind_ bind)) id' bs)
+                           return (NormalEvent (BindingVar (getBind_ bind)) id' bs tv')
      Abs.OnlyId id         -> do let id' = getIdAbs id
                                  return (OnlyId id')
      Abs.OnlyIdPar id      -> do let id' = getIdAbs id
@@ -348,6 +403,11 @@ getCEElement (Abs.CEid id)    =
 getCEElement (Abs.CEidpar id) = 
  let id' = getIdAbs id
  in return (CEidpar id')
+
+getTriggerVariation :: Abs.TriggerVariation -> TriggerVariation
+getTriggerVariation Abs.EVEntry        = EVEntry
+getTriggerVariation (Abs.EVExit vars)  = EVExit (map (getBind_.getVarsAbs) vars)
+getTriggerVariation Abs.EVENil         = EVENil
 
 --Checks if the triggers in the collections are defined
 checkCollectionTrPPD :: Triggers -> UpgradeModel ()

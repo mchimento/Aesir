@@ -108,7 +108,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "NORMAL" 20 (b "?" 10 (b "->" 5 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "," 4 N N)) (b ";" 8 (b "/" 7 (b "." 6 N N) N) (b "=" 9 N N))) (b "FOREACH" 15 (b "BAD" 13 (b "ACTEVENTS" 12 (b "ACCEPTING" 11 N N) N) (b "CINVARIANTS" 14 N N)) (b "METHODS" 18 (b "INITPROP" 17 (b "IMPORTS" 16 N N) N) (b "MODEL" 19 N N)))) (b "\\" 30 (b "TEMPLATES" 25 (b "STATES" 23 (b "STARTING" 22 (b "PROPERTY" 21 N N) N) (b "TEMPLATE" 24 N N)) (b "VARIABLES" 28 (b "TRIGGERS" 27 (b "TRANSITIONS" 26 N N) N) (b "[" 29 N N))) (b "import" 35 (b "execution" 33 (b "call" 32 (b "]" 31 N N) N) (b "final" 34 N N)) (b "|" 38 (b "{" 37 (b "where" 36 N N) N) (b "}" 39 N N))))
+resWords = b "PROPERTY" 21 (b "ACCEPTING" 11 (b "." 6 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "->" 5 (b "," 4 N N) N)) (b "=" 9 (b ";" 8 (b "/" 7 N N) N) (b "?" 10 N N))) (b "IMPORTS" 16 (b "CINVARIANTS" 14 (b "BAD" 13 (b "ACTEVENTS" 12 N N) N) (b "FOREACH" 15 N N)) (b "MODEL" 19 (b "METHODS" 18 (b "INITPROP" 17 N N) N) (b "NORMAL" 20 N N)))) (b "call" 32 (b "TRIGGERS" 27 (b "TEMPLATE" 24 (b "STATES" 23 (b "STARTING" 22 N N) N) (b "TRANSITIONS" 26 (b "TEMPLATES" 25 N N) N)) (b "\\" 30 (b "[" 29 (b "VARIABLES" 28 N N) N) (b "]" 31 N N))) (b "import" 37 (b "exit" 35 (b "execution" 34 (b "entry" 33 N N) N) (b "final" 36 N N)) (b "|" 40 (b "{" 39 (b "where" 38 N N) N) (b "}" 41 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 

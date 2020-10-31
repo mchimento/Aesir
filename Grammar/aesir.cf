@@ -61,7 +61,7 @@ Trigger. Trigger ::= Id "(" [Bind] ")" "=" CompoundTrigger WhereClause ;
 separator Bind "," ;
 
 Collection. CompoundTrigger ::= TriggerList ;
-NormalEvent. CompoundTrigger ::= "{" Binding Id "(" [Vars] ")" "}" ;
+NormalEvent. CompoundTrigger ::= "{" Binding Id "(" [Vars] ")" TriggerVariation "}" ;
 --ClockEvent. CompoundTrigger ::= "{" Id Timeout Integer "}" ;
 OnlyId. CompoundTrigger ::= "{" Id "}";
 OnlyIdPar. CompoundTrigger ::= "{" Id "(" ")" "}";
@@ -75,6 +75,10 @@ separator CEElement "|" ;
 CEct. CEElement ::= CompoundTrigger ;
 CEid. CEElement ::= Id ;
 CEidpar. CEElement ::= Id "(" ")" ;
+
+EVENil. TriggerVariation ::=  ;
+EVEntry. TriggerVariation ::= "entry" ;
+EVExit. TriggerVariation  ::= "exit" "(" [Vars] ")" ;
 
 BindingVar. Binding ::= Bind "." ;
 

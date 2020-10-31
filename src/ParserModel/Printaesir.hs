@@ -205,7 +205,7 @@ instance Print Trigger where
 instance Print CompoundTrigger where
   prt i e = case e of
    Collection triggerlist -> prPrec i 0 (concatD [prt 0 triggerlist])
-   NormalEvent binding id varss -> prPrec i 0 (concatD [doc (showString "{") , prt 0 binding , prt 0 id , doc (showString "(") , prt 0 varss , doc (showString ")") , doc (showString "}")])
+   NormalEvent binding id varss triggervariation -> prPrec i 0 (concatD [doc (showString "{") , prt 0 binding , prt 0 id , doc (showString "(") , prt 0 varss , doc (showString ")") , prt 0 triggervariation , doc (showString "}")])
    OnlyId id -> prPrec i 0 (concatD [doc (showString "{") , prt 0 id , doc (showString "}")])
    OnlyIdPar id -> prPrec i 0 (concatD [doc (showString "{") , prt 0 id , doc (showString "(") , doc (showString ")") , doc (showString "}")])
 
@@ -225,6 +225,13 @@ instance Print CEElement where
    [] -> (concatD [])
    [x] -> (concatD [prt 0 x])
    x:xs -> (concatD [prt 0 x , doc (showString "|") , prt 0 xs])
+
+instance Print TriggerVariation where
+  prt i e = case e of
+   EVENil  -> prPrec i 0 (concatD [])
+   EVEntry  -> prPrec i 0 (concatD [doc (showString "entry")])
+   EVExit varss -> prPrec i 0 (concatD [doc (showString "exit") , doc (showString "(") , prt 0 varss , doc (showString ")")])
+
 
 instance Print Binding where
   prt i e = case e of

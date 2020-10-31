@@ -68,7 +68,7 @@ data Trigger =
 
 data CompoundTrigger =
    Collection TriggerList
- | NormalEvent Binding Id [Vars]
+ | NormalEvent Binding Id [Vars] TriggerVariation
  | OnlyId Id
  | OnlyIdPar Id
   deriving (Eq,Ord,Show,Read)
@@ -81,6 +81,12 @@ data CEElement =
    CEct CompoundTrigger
  | CEid Id
  | CEidpar Id
+  deriving (Eq,Ord,Show,Read)
+
+data TriggerVariation =
+   EVENil
+ | EVEntry
+ | EVExit [Vars]
   deriving (Eq,Ord,Show,Read)
 
 data Binding =
