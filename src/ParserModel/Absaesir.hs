@@ -177,31 +177,11 @@ data Transitions =
   deriving (Eq,Ord,Show,Read)
 
 data Transition =
-   Transition NameState NameState Arrow
-  deriving (Eq,Ord,Show,Read)
-
-data Arrow =
-   Arrow Id Actmark Condition
-  deriving (Eq,Ord,Show,Read)
-
-data Actmark =
-   ActMarkNil
- | ActMark
-  deriving (Eq,Ord,Show,Read)
-
-data Condition =
-   Cond1
- | Cond2 CondExp Post
-  deriving (Eq,Ord,Show,Read)
-
-data Post =
-   Post
- | PostCond CondExp
- | PostAct CondExp Action
+   Transition NameState NameState CondExp Id CondExp [Action]
   deriving (Eq,Ord,Show,Read)
 
 data Action =
-   Action Expressions
+   Act CondExp
   deriving (Eq,Ord,Show,Read)
 
 data Foreaches =

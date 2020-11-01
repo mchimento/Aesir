@@ -223,36 +223,12 @@ transTransitions x = case x of
 
 transTransition :: Transition -> Result
 transTransition x = case x of
-  Transition namestate1 namestate2 arrow3  -> failure x
-
-
-transArrow :: Arrow -> Result
-transArrow x = case x of
-  Arrow id actmark condition  -> failure x
-
-
-transActmark :: Actmark -> Result
-transActmark x = case x of
-  ActMarkNil  -> failure x
-  ActMark  -> failure x
-
-
-transCondition :: Condition -> Result
-transCondition x = case x of
-  Cond1  -> failure x
-  Cond2 condexp post  -> failure x
-
-
-transPost :: Post -> Result
-transPost x = case x of
-  Post  -> failure x
-  PostCond condexp  -> failure x
-  PostAct condexp action  -> failure x
+  Transition namestate1 namestate2 condexp3 id4 condexp5 actions6  -> failure x
 
 
 transAction :: Action -> Result
 transAction x = case x of
-  Action expressions  -> failure x
+  Act condexp  -> failure x
 
 
 transForeaches :: Foreaches -> Result

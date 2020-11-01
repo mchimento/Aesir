@@ -8,7 +8,7 @@ MODEL {
 
 TRIGGERS {
 login_exit(String un, int pwd,UserInterface f) = {f.login(un, pwd)}
-logout_entry() = {UserInterface f.logout()}
+logout_entry() = {UserInterface f.logout()entry}
 deposit_entry(int money) = {UserInterface f.deposit(money)}
 start_from_operation (Messages m, short ret) = {ConPurse sender.start_from_operation(m)exit(ret)}
 }
@@ -24,19 +24,17 @@ NORMAL { q2 (deposit_ok) ; }
 
 TRANSITIONS
 {
-q1 -> q2 [login_exit \ f != null && f.getUser() != null \ true ]
-q1 -> bad [deposit_entry]
-q2 -> q1 [logout_entry \ f != null && f.getUser() != null \ true ]
-q2 -> q2 [deposit_entry \ f != null && f.getUser() != null \ true]
-q3 -> q4 [foo \ ]
-q3 -> q4 [foo \ b ]
-q3 -> q4 [foo \ \ ]
-q3 -> q4 [foo \ \ b ]
-q3 -> q4 [foo \ \ \ ]
-q3 -> q4 [foo \ b \ ]
-q3 -> q4 [foo \ b \ b2 ]
-q3 -> q4 [foo \ b \ b2 \  ]
-q3 -> q4 [foo \ b \ b2 \ act ]
+q3 -> q4 [ pre == true \ foo \ true \ skip ;]
+q1 -> q2 [true \ login_exit \ f != null && f.getUser() != null \ skip ; ]
+q1 -> bad [true \ deposit_entry \ true \ skip ;]
+q2 -> q1 [true \ logout_entry \ f != null && f.getUser() != null \ skip ;]
+q2 -> q2 [true \ deposit_entry \ f == null && f.getUser() != null \ skip ;]
+q3 -> q4 [true \ foo \ true \ skip ; ]
+q3 -> q4 [true \ foo \ b \ skip ;]
+q3 -> q4 [true \ foo \ true \ skip ;]
+q3 -> q4 [foo \ b \ b2 \ act ; act ; ]
+q3 -> q4 [foo && y \ b \ b2 \ act ; ]
+q1 -> q2 [true \ login_exit \ f != null && f.getUser() != null \ skip ; skip ; ]
 }
 
 }%%end prop_deposit

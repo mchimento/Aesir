@@ -357,40 +357,19 @@ instance Print Transitions where
 
 instance Print Transition where
   prt i e = case e of
-   Transition namestate0 namestate arrow -> prPrec i 0 (concatD [prt 0 namestate0 , doc (showString "->") , prt 0 namestate , doc (showString "[") , prt 0 arrow , doc (showString "]")])
+   Transition namestate0 namestate condexp1 id condexp actions -> prPrec i 0 (concatD [prt 0 namestate0 , doc (showString "->") , prt 0 namestate , doc (showString "[") , prt 0 condexp1 , doc (showString "\\") , prt 0 id , doc (showString "\\") , prt 0 condexp , doc (showString "\\") , prt 0 actions , doc (showString "]")])
 
   prtList es = case es of
    [x] -> (concatD [prt 0 x])
    x:xs -> (concatD [prt 0 x , prt 0 xs])
 
-instance Print Arrow where
-  prt i e = case e of
-   Arrow id actmark condition -> prPrec i 0 (concatD [prt 0 id , prt 0 actmark , prt 0 condition])
-
-
-instance Print Actmark where
-  prt i e = case e of
-   ActMarkNil  -> prPrec i 0 (concatD [])
-   ActMark  -> prPrec i 0 (concatD [doc (showString "?")])
-
-
-instance Print Condition where
-  prt i e = case e of
-   Cond1  -> prPrec i 0 (concatD [])
-   Cond2 condexp post -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 condexp , prt 0 post])
-
-
-instance Print Post where
-  prt i e = case e of
-   Post  -> prPrec i 0 (concatD [])
-   PostCond condexp -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 condexp])
-   PostAct condexp action -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 condexp , doc (showString "\\") , prt 0 action])
-
-
 instance Print Action where
   prt i e = case e of
-   Action expressions -> prPrec i 0 (concatD [prt 0 expressions])
+   Act condexp -> prPrec i 0 (concatD [prt 0 condexp])
 
+  prtList es = case es of
+   [x] -> (concatD [prt 0 x , doc (showString ";")])
+   x:xs -> (concatD [prt 0 x , doc (showString ";") , prt 0 xs])
 
 instance Print Foreaches where
   prt i e = case e of

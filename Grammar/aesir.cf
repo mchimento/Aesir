@@ -138,22 +138,11 @@ InitProg. InitialCode ::= "{" Java "}" ;
 Transitions. Transitions ::= "TRANSITIONS" "{" [Transition] "}" ;
 separator nonempty Transition "" ;
 
-Transition. Transition ::= NameState "->" NameState "[" Arrow "]" ;
+Transition. Transition ::= 
+  NameState "->" NameState "[" CondExp "\\" Id "\\" CondExp "\\" [Action] "]" ;
 
-Arrow. Arrow ::= Id Actmark Condition ;
-
-ActMarkNil. Actmark ::= ;
-ActMark. Actmark ::= "?" ;
-
-Cond1. Condition ::= ;
-Cond2. Condition ::= "\\" CondExp Post ;
-
-Post. Post ::= ;
-PostCond. Post ::= "\\" CondExp ;
-PostAct. Post ::= "\\" CondExp "\\" Action ;
-
-Action. Action ::= Expressions ;
-
+Act. Action ::= CondExp ;
+terminator nonempty Action ";" ;
 
 ForeachesNil. Foreaches ::= ;
 ForeachesDef. Foreaches ::= "FOREACH" "(" [Args] ")" "{" Context "}" Foreaches ;

@@ -674,14 +674,12 @@ getTransitions :: PropertyName -> Abs.Transitions -> Env -> Scope -> Writer Stri
 getTransitions id (Abs.Transitions ts) env scope = 
  do xs <- sequence $ map (getTransition' id env scope) ts
     let trans = map fst xs
-    let envs  = map snd xs
-    let env'  = joinEnvsCreate envs emptyEnv
     let ys    = [fromState tr | tr <- trans] ++ [toState tr | tr <- trans]
-    return (trans,env' {sts = ys})
+    return (trans,env {sts = ys})
 
 getTransition' :: PropertyName -> Env -> Scope -> Abs.Transition -> Writer String (Transition,Env)
-getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2) ar) = 
- case runWriter (getArrow ar env scope) of
+getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2) pre fun post acts) = 
+ case runWriter (getArrow pre fun post acts env scope) of
       ((xs,env'),s) -> 
           do let err = "Error: Parsing error in an action of a transition from state " 
                         ++ getIdAbs q1 ++ " to state " 
@@ -693,39 +691,27 @@ getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2
                                 , toState = getIdAbs q2
                                 }, env')
 
-getArrow :: Abs.Arrow -> Env -> Scope -> Writer String (Arrow,Env)
-getArrow (Abs.Arrow id mark Abs.Cond1) env scope        = 
- return $ (Arrow { trigger = getIdAbs id ++ addQuestionMark mark, precond = "", postcond = "", action = "" },env)
-getArrow (Abs.Arrow id mark (Abs.Cond2 cond post)) env scope = 
- case post of
-      Abs.Post             -> return $ (Arrow { trigger = getIdAbs id ++ addQuestionMark mark, 
-                                                precond = printTree cond, 
-                                                postcond = "", 
-                                                action = "" },env)
-      Abs.PostCond cexp    -> return $ (Arrow { trigger = getIdAbs id ++ addQuestionMark mark, 
-                                                precond = printTree cond, 
-                                                postcond = printTree cexp, 
-                                                action = "" },env)
-      Abs.PostAct cexp act -> 
-        let act' = (trim.printTree) act in
-        case ParAct.parse act' of 
-             Bad s -> do tell s
-                         return $ (Arrow { trigger = getIdAbs id ++ addQuestionMark mark, 
-                                           precond = printTree cond, 
-                                           postcond = printTree cexp, 
-                                           action = "Parse error" },env)
-             Ok (Act.Actions ac) -> 
-                      case runWriter $ sequence (map (\a -> checkTempInCreate a env) ac) of
-                           (ac',s') -> do tell s'
-                                          let ac'' = filter isCreateAct ac'
-                                          let acts = [CAI y z "" x scope | (y,z,x) <- concatMap getIdAndArgs ac'']
-                                          let env' = env { allCreateAct = acts ++ (allCreateAct env)}
-                                          return $ (Arrow { trigger = getIdAbs id ++ addQuestionMark mark, 
-                                                            precond = printTree cond, 
-                                                            postcond = printTree cexp, 
-                                                            action = act' },env')
-      
-
+getArrow :: Abs.CondExp -> Abs.Id -> Abs.CondExp -> [Abs.Action] ->
+            Env -> Scope -> Writer String (Arrow,Env)
+getArrow pre fun post acts env scope = 
+ let act' = (trim.printTree) acts in
+ case ParAct.parse act' of 
+      Bad s -> do tell s
+                  return $ (Arrow { trigger  = printTree fun, 
+                                    precond  = printTree pre, 
+                                    postcond = printTree post, 
+                                    action   = "Parse error" },env)
+      Ok (Act.Actions ac) -> 
+         case runWriter $ sequence (map (\a -> checkTempInCreate a env) ac) of
+              (ac',s') -> do tell s'
+                             let ac'' = filter isCreateAct ac'
+                             let acts = [CAI y z "" x scope | (y,z,x) <- concatMap getIdAndArgs ac'']
+                             let env' = env { allCreateAct = acts ++ (allCreateAct env)}
+                             return $ (Arrow { trigger  = printTree fun, 
+                                               precond  = printTree pre, 
+                                               postcond = printTree post, 
+                                               action   = act' },env')
+ 
 isCreateAct :: Act.Action -> Bool
 isCreateAct (Act.ActCreate _ _) = True
 isCreateAct (Act.ActCond _ act) = isCreateAct act
@@ -737,19 +723,6 @@ getIdAndArgs ac@(Act.ActCreate (Act.Temp (Act.IdAct id)) args) = [(id,args,ac)]
 getIdAndArgs (Act.ActCond _ act)                               = getIdAndArgs act
 getIdAndArgs (Act.ActBlock (Act.Actions acts))                 = concatMap getIdAndArgs acts
 getIdAndArgs _                                                 = []
-
-joinEnvsCreate :: [Env] -> Env -> Env
-joinEnvsCreate [] env          = env
-joinEnvsCreate (env:envs) env' = joinEnvsCreate envs (joinEnvs env env')                                            
-
-joinEnvs :: Env -> Env -> Env
-joinEnvs env env' = 
- let acts = [ act | act <- allCreateAct env', not (elem act (allCreateAct env))] 
- in env { allCreateAct = (allCreateAct env) ++ acts }
-
-addQuestionMark :: Abs.Actmark -> String
-addQuestionMark Abs.ActMarkNil  = ""
-addQuestionMark Abs.ActMark     = "?"
             
 checkTempInCreate :: Act.Action -> Env -> Writer String Act.Action
 checkTempInCreate ac@(Act.ActCreate (Act.Temp (Act.IdAct id) ) _) env = 
@@ -767,6 +740,7 @@ checkTempInCreate (Act.ActBlock (Act.Actions acts)) env     =
       (ac,s) -> do tell s
                    return $ Act.ActBlock (Act.Actions ac)
 checkTempInCreate act env                     = return act
+
 
 ---------------
 -- Foreaches --
