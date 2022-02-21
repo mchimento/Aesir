@@ -25,23 +25,21 @@ PROPERTY sender_purse {
 STATES
 {
 STARTING { awaiting_from ; }
-ACCEPTING { foo ; }
-NORMAL { awaiting_from ; 
-         parties_initialised ;
+NORMAL { parties_initialised ;
          money_deducted ;
-         end_transaction
+         end_transaction (init) ;
        }
 }
 
 TRANSITIONS
 {
 awaiting_from -> parties_initialised [m.label == StartFrom && m.id == sender.name 
-                                      \ start_from_operation \ ret == SWResponses.SW_SUCCESS]
+                                      \ start_from_operation \ ret == SWResponses.SW_SUCCESS \ skip ;]
 
 parties_initialised -> money_deducted [ m.label == Req && m.id == sender.name && m.paydetails.value == pvalue 
-                                        \ req_operation \ ret == SWResponses.SW_SUCCESS ]
+                                        \ req_operation \ ret == SWResponses.SW_SUCCESS \ skip ; ]
 
-money_deducted -> end_transaction [m.label == Ack && m.id == sender.name \ ack_operation \ ret == SWResponses.SW_SUCCESS ]
+money_deducted -> end_transaction [m.label == Ack && m.id == sender.name \ ack_operation \ ret == SWResponses.SW_SUCCESS \ skip ; ]
 }
 } %%end of PROPERTY
 
@@ -59,4 +57,6 @@ ConPurse {(transaction != null) && (transaction.value >= 0)}
 ConPurse {(\forall int i; i>=0 && i<25; exLog[i] != null)}
 ConPurse {name > 0}
 }
+
+INITPROP init { true }
 

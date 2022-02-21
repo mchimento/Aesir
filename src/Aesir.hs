@@ -29,7 +29,7 @@ version = "Aesir 1.0.0.0"
 --                   | +------- version ID
 --                   | | +----- mayor changes or (mayor) bugs fixed in API
 --                   | | | + -- minor changes or (minor) bugs fixed in API
--- version           A.B.C.D 
+-- version           A.B.C.D
 
 ----------
 -- Main --
@@ -37,27 +37,27 @@ version = "Aesir 1.0.0.0"
 
 main :: IO ()
 main =
- do args <- SE.getArgs    
+ do args <- SE.getArgs
     case getOpt Permute options args of
-      ([Help],xs,[]) -> 
+      ([Help],xs,[]) ->
         do name <- getProgName
-           if (not.null) xs 
+           if (not.null) xs
            then do putStrLn ("\nError: Invalid usage of option -h.\n")
                    putStrLn ("Usage: " ++ name ++ " -h\n")
-           else do putStrLn $ usageInfo "" options 
+           else do putStrLn $ usageInfo "" options
                    putStrLn ("Usage: " ++ name ++ " [-OPTIONS] <java_source_files> <model_file> <output>")
-      ([Version],xs,[]) -> 
+      ([Version],xs,[]) ->
         do name <- getProgName
-           if (not.null) xs 
+           if (not.null) xs
            then do putStrLn ("\nError: Invalid usage of option -v.\n")
                    putStrLn ("Usage: " ++ name ++ " -v\n")
            else do putStrLn version
-      ([OnlyParse],xs,[]) -> 
+      ([OnlyParse],xs,[]) ->
         if length xs /= 1
         then do name <- getProgName
                 putStrLn ("\nError: Invalid usage of option -p.\n")
                 putStrLn ("Usage: " ++ name ++ " -p <model_file>\n")
-        else 
+        else
           do let model_fn = head xs
              ws <- argsExist Nothing (Just model_fn) Nothing
              let (b,s) = runWriter ws
@@ -66,18 +66,18 @@ main =
                      putStrLn $ "\nWelcome to Aesir\n"
                      case parse model_txt of
                           Bad s       -> putStrLn $ "The parsing has failed.\n\n" ++ s ++ "\n"
-                          Ok absmodel -> do let model = upgradeModel absmodel 
+                          Ok absmodel -> do let model = upgradeModel absmodel
                                             case runStateT model emptyEnv of
                                                 Bad s -> putStrLn $ "The parsing has failed.\n\n" ++ s ++ "\n"
                                                 Ok _  -> putStrLn "The parsing was successful.\n"
              else putStrLn s
-      (flags,[stToReach,iter,java_fn_add, model_fn, output_add],[]) -> 
+      (flags,[stToReach,iter,java_fn_add, model_fn, output_add],[]) ->
           if checkOptions flags
           then do iter' <- convert2Int iter
                   if iter' == Nothing
                   then do name <- getProgName
                           putStrLn "\nError: Second argument must be an integer.\n"
-                          putStrLn (usage name) 
+                          putStrLn (usage name)
                   else run flags stToReach (fromJust iter') java_fn_add model_fn output_add
           else putStrLn ("\nError: Invalid usage of options.\n")
       (_,_,[]) -> do name <- getProgName
@@ -89,7 +89,7 @@ convert2Int :: String -> IO (Maybe Integer)
 convert2Int s = return $ readMaybe s
 
 usage :: String -> String
-usage name = "Usage: " ++ name 
+usage name = "Usage: " ++ name
              ++ " [-OPTIONS] <state_to_reach> <loop_iter_limit> <java_source_files> <model_file> <output>\n"
 
 ----------------
@@ -97,22 +97,22 @@ usage name = "Usage: " ++ name
 ----------------
 
 run :: [Flag] -> NameState -> Integer -> FilePath -> FilePath -> FilePath -> IO ()
-run flags stToReach iter java_fn_add model_fn output_add =  
+run flags stToReach iter java_fn_add model_fn output_add =
  do putStrLn $ "\nWelcome to Aesir\n"
     ws <- argsExist (Just java_fn_add) (Just model_fn) (Just output_add)
     case runWriter ws of
      (b,s) ->
-      if not b 
+      if not b
       then putStrLn s
       else do let java_fn_add' = setAddress java_fn_add
               modelP <- fmap parse $ readFile model_fn
               case modelP of
                    Bad s        -> do putStrLn $ "\nThe parsing has failed: " ++ s
-                   Ok absmodel -> 
+                   Ok absmodel ->
                       do let output_addr = setAddress output_add
                          let output_add' = output_addr ++ "out/"
                          checkOutputDirectory output_add'
-                         createDirectoryIfMissing False output_add'      
+                         createDirectoryIfMissing False output_add'
                          createDirectoryIfMissing False (output_add' ++ "/workspace")
                          let model = upgradeModel absmodel
                          case runStateT model emptyEnv of
@@ -124,12 +124,13 @@ run flags stToReach iter java_fn_add model_fn output_add =
                                                        if Map.null reachMap
                                                        then putStrLn "Error: Reachability analysis has failed.\n"
                                                        else do putStrLn "Reachability analysis... [DONE]"
+                                                               putStr "Backwards reachability tree computation..."
                                                                brt <- computeBRT model' reachMap iter stToReach java_fn_add output_add'
                                                                tcInference brt
-                                                               --removeDirectoryRecursive (output_add' ++ "workspace") 
+                                                               --removeDirectoryRecursive (output_add' ++ "workspace")
                                                                putStrLn "Aesir has finished successfully.\n"
                                                else putStrLn $ "Error: Argument " ++ stToReach
-                                                                ++ " is not a state of the model.\n" 
+                                                                ++ " is not a state of the model.\n"
                                           else putStrLn (wellFormedActions model')
 
 -------------------------
@@ -138,7 +139,7 @@ run flags stToReach iter java_fn_add model_fn output_add =
 
 --Method used to check if the provided arguments exist
 argsExist :: Maybe FilePath -> Maybe FilePath -> Maybe FilePath -> IO (Writer String Bool)
-argsExist java_fn_add model_fn output_add = 
+argsExist java_fn_add model_fn output_add =
  do source <- checkDirectory java_fn_add
     ppd    <- isModelFile model_fn
     out    <- checkDirectory output_add
@@ -147,16 +148,16 @@ argsExist java_fn_add model_fn output_add =
 --Checks if a given directory exists
 checkDirectory :: Maybe FilePath -> IO (Writer String Bool)
 checkDirectory Nothing    = return $ writer (True,"")
-checkDirectory (Just add) = 
+checkDirectory (Just add) =
  do b <- doesDirectoryExist add
-    if b 
-    then return $ writer (b,"") 
+    if b
+    then return $ writer (b,"")
     else return $ writer (False,"Error: Directory " ++ add ++ " does not exist.\n")
 
 --Checks if the the file in FilePath has .model extension (i.e., is a model file) and if it exists
 isModelFile :: Maybe FilePath -> IO (Writer String Bool)
 isModelFile Nothing          = return $ writer (True,"")
-isModelFile (Just model_fn) = 
+isModelFile (Just model_fn) =
  do b1 <- doesFileExist model_fn
     if (not b1)
     then return $ writer (False,"Error: model file " ++ model_fn ++ " does not exist.\n")
@@ -167,7 +168,7 @@ isModelFile (Just model_fn) =
 
 appendWriter :: Writer String Bool -> Writer String Bool -> Writer String Bool
 appendWriter wr wr' =
- case (runWriter wr,runWriter wr') of 
+ case (runWriter wr,runWriter wr') of
       ((b,s),(b',s')) -> writer (b&&b',s++s')
 
 --Method used to check wrong combination of options
@@ -179,13 +180,13 @@ checkOptions (Help:xs)        = False
 --checkOptions (_:xs)           = checkOptions xs
 
 checkOutputDirectory :: FilePath -> IO ()
-checkOutputDirectory file = 
+checkOutputDirectory file =
  do b <- doesDirectoryExist file
     if b then removeDirectoryRecursive file
          else return ()
 
 setAddress :: FilePath -> FilePath
-setAddress add = 
- if ((last $ trim add) == '/') 
- then add 
+setAddress add =
+ if ((last $ trim add) == '/')
+ then add
  else add ++ "/"

@@ -28,20 +28,20 @@ upgradeModel :: Abs.AbsModel -> UpgradeModel CModel
 upgradeModel (Abs.AbsModel imports model temps cinvs consts methods) =
  chainExec (imports, model, temps, cinvs, consts, methods) (CModel [] nilModel TempNil [] (IProp "" "") []) emptyEnv [] 1
           where nilModel = undefined --Hack. This should not affect the execution of the tool.
-                              
+
 chainExec :: (Abs.Imports, Abs.Model, Abs.Templates, Abs.CInvariants, Abs.IProp, Abs.Methods) -> CModel -> Env -> [String] -> Int -> UpgradeModel CModel
-chainExec modelp model env errs 6 = 
+chainExec modelp model env errs 6 =
  if null errs
  then do put env
          return model
  else fail $ concat errs
-chainExec modelp model env errs n = 
+chainExec modelp model env errs n =
  case n of
       1 -> let model'  = importsGet .~ genImports (modelp ^. _1) $ model
-               model'' = methodsGet .~ genMethods (modelp ^. _6) $ model' 
+               model'' = methodsGet .~ genMethods (modelp ^. _6) $ model'
            in let imps  = model' ^. importsGet
                   imps' = getDuplicates imps
-              in if (null imps') 
+              in if (null imps')
                  then chainExec modelp model'' env errs 2
                  else chainExec modelp model'' env (errs ++ (duplicateImps imps')) 2
       2 -> case runWriter (genIProp (modelp ^. _5)) of
@@ -77,7 +77,7 @@ duplicateImps = map (\imp -> "Error: Multiple imports for " ++ (\(Import s) -> s
 ----------------------
 
 genIProp :: Abs.IProp -> Writer String IProp
-genIProp (Abs.IProp id jml) = 
+genIProp (Abs.IProp id jml) =
  case runWriter (getJML jml "initial property.") of
       (jml', []) -> return $ IProp (getIdAbs id) jml'
       (_,errs)   -> do tell errs
@@ -88,14 +88,14 @@ genIProp (Abs.IProp id jml) =
 
 genModel :: Abs.Model -> UpgradeModel Model
 genModel (Abs.Model ctxt) =
- do ctxt' <- getCtxt ctxt TopLevel    
+ do ctxt' <- getCtxt ctxt TopLevel
     return (Model ctxt')
 
 -- Context --
 
 getCtxt :: Abs.Context -> Scope -> UpgradeModel Context
 getCtxt (Abs.Ctxt _ _ _ Abs.PropertiesNil Abs.ForeachesNil) _ = fail $ "Error: No properties were defined in section GLOBAL\n."
-getCtxt (Abs.Ctxt Abs.VarNil Abs.ActEventsNil Abs.TriggersNil Abs.PropertiesNil foreaches@(Abs.ForeachesDef _ _ _)) TopLevel = 
+getCtxt (Abs.Ctxt Abs.VarNil Abs.ActEventsNil Abs.TriggersNil Abs.PropertiesNil foreaches@(Abs.ForeachesDef _ _ _)) TopLevel =
 -- getForeaches foreaches (Ctxt [] [] [] PNIL []) (InFor (ForId "TopLevel"))
  fail "Error: This version of Aesir does not support FOREACH constructs.\n"
 getCtxt (Abs.Ctxt vars ies Abs.TriggersNil prop foreaches) scope =
@@ -107,20 +107,20 @@ getCtxt (Abs.Ctxt vars ies trigs prop foreaches) scope =
     env <- get
     let prop' = getProperty prop (map tiTN (allTriggers env)) env scope
     --let cns   = (initprop env) ^. ipropID
-    let ies'  = getActEvents ies ++ map ActEvent (actes env) 
+    let ies'  = getActEvents ies ++ map ActEvent (actes env)
     case runWriter prop' of
          ((PNIL,env'),_)                    -> do put env'
                                                   getForeaches foreaches (Ctxt vars' ies' trigs' PNIL []) scope
-         ((Property pname states trans props,env'),s) -> 
+         ((Property pname states trans props,env'),s) ->
                   let trs    = (addComma.removeDuplicates) [tr | tr <- s ^. _1
                                                                  , not (elem tr (map ((\x -> x ++ "?").show) ies'))]
                       s'     = if (not.null) trs
-                               then "Error: Trigger(s) [" ++ trs 
-                                    ++ "] is(are) used in the transitions, but is(are) not defined in section TRIGGERS.\n" 
+                               then "Error: Trigger(s) [" ++ trs
+                                    ++ "] is(are) used in the transitions, but is(are) not defined in section TRIGGERS.\n"
                                     ++ s ^. _2 ++ s ^. _3 ++ s ^. _4
-                               else s ^. _2 ++ s ^. _3 ++ s ^. _4 
+                               else s ^. _2 ++ s ^. _3 ++ s ^. _4
                   in if (null s')
-                     then do put env' 
+                     then do put env'
                              getForeaches foreaches (Ctxt vars' ies' trigs' (Property pname states trans props) []) scope
                      else fail s'
 
@@ -177,17 +177,17 @@ getTrigger' scope (Abs.Trigger id binds ce wc) args =
     let id'' = getIdAbs id
     let xs   = [ x | x <- allTriggers env, id'' == tiTN x, tiScope x == scope ]
     let err  = if (not.null) xs
-               then "Error: Multiple definitions for trigger " 
-                    ++ id'' ++ ".\n" ++ show scope ++ "\n" 
+               then "Error: Multiple definitions for trigger "
+                    ++ id'' ++ ".\n" ++ show scope ++ "\n"
                else ""
     let (bs, s) = runWriter $ getBindsArgs binds
-    let err0    = if (not.null) s 
-                  then err ++ "Error: Trigger declaration [" ++ id'' 
+    let err0    = if (not.null) s
+                  then err ++ "Error: Trigger declaration [" ++ id''
                        ++ "] uses wrong argument(s) [" ++ s ++ "].\n"
                   else err
     let (ce',s') = runWriter (getCompTriggers ce)
     let err1 = if (not.null) s'
-               then err0 ++ ("Error: Trigger declaration [" ++ id'' 
+               then err0 ++ ("Error: Trigger declaration [" ++ id''
                     ++ "] uses wrong argument(s) [" ++ s' ++ "] in the method component.\n")
                else err0
     let argss = map getIdBind bs
@@ -200,14 +200,14 @@ getTrigger' scope (Abs.Trigger id binds ce wc) args =
                        let id  = getIdBind bind
                            wcs = [x | x <- argss, not(elem x allArgs)]
                            vs  = filter (\ x -> x /= id) $ checkVarsInitialisation wcs (getVarsWC wc)
-                       in if ((not.null) vs) 
-                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) " 
+                       in if ((not.null) vs)
+                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) "
                                       ++ show vs ++  " in trigger declaration [" ++ id'' ++ "].\n"
                           else do let (b,zs)   = runWriter ((checkAllArgs argss allArgs bind))
                                   let (b',s'') = runWriter (checkSpecialCases b mn bind bs [] zs id'' env scope)
-                                  if b' 
-                                  then if (not.null) err1 
-                                       then fail err1 
+                                  if b'
+                                  then if (not.null) err1
+                                       then fail err1
                                        else do (ci,cinm) <- getClassVarName id'' mn bs bind s'' scope args
                                                let tr = TriggerDef { _tName = id''
                                                                    , _args  = bs
@@ -223,14 +223,14 @@ getTrigger' scope (Abs.Trigger id binds ce wc) args =
                            wcs = [x | x <- argss, not(elem x allArgs)]
                            rs' = map getIdBind rs
                            vs  = filter (\ x -> (not (elem x rs')) && (x /= id)) $ checkVarsInitialisation wcs (getVarsWC wc)
-                       in if ((not.null) vs) 
-                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) " 
+                       in if ((not.null) vs)
+                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) "
                                       ++ show vs ++ " in trigger declaration [" ++ id'' ++ "].\n"
                           else do let (b,zs)   = runWriter ((checkAllArgs argss allArgs bind))
                                   let (b',s'') = runWriter (checkSpecialCases b mn bind bs rs zs id'' env scope)
                                   if (b' && (checkRetVar rs argss))
-                                  then if (not.null) err1 
-                                       then fail err1 
+                                  then if (not.null) err1
+                                       then fail err1
                                        else do (ci,cinm) <- getClassVarName id'' mn bs bind s'' scope args
                                                let tr = TriggerDef { _tName = id''
                                                                    , _args  = bs
@@ -245,14 +245,14 @@ getTrigger' scope (Abs.Trigger id binds ce wc) args =
                        let id  = getIdBind bind
                            wcs = [x | x <- argss, not(elem x allArgs)]
                            vs  = filter (\ x -> x /= id) $ checkVarsInitialisation wcs (getVarsWC wc)
-                       in if ((not.null) vs) 
-                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) " 
+                       in if ((not.null) vs)
+                          then fail $ err1 ++ "Error: Missing Initialization of variable(s) "
                                       ++ show vs ++  " in trigger declaration [" ++ id'' ++ "].\n"
                           else do let (b,zs)   = runWriter ((checkAllArgs argss allArgs bind))
                                   let (b',s'') = runWriter (checkSpecialCases b mn bind bs [] zs id'' env scope)
-                                  if b' 
-                                  then if (not.null) err1 
-                                       then fail err1 
+                                  if b'
+                                  then if (not.null) err1
+                                       then fail err1
                                        else do (ci,cinm) <- getClassVarName id'' mn bs bind s'' scope args
                                                let tr = TriggerDef { _tName = id''
                                                                    , _args  = bs
@@ -285,7 +285,7 @@ isBindStar _            = False
 
 --Method handling the special cases of the use of new and channels
 checkSpecialCases :: Bool -> MethodName -> Bind -> [Bind] -> [Bind] -> [String] -> Trigger -> Env -> Scope -> Writer String Bool
-checkSpecialCases b mn bind bs rs zs id env scope = 
+checkSpecialCases b mn bind bs rs zs id env scope =
  if b
  then return b
  else case runWriter (checkMNforNew mn bind bs rs id zs) of
@@ -296,36 +296,36 @@ checkSpecialCases b mn bind bs rs zs id env scope =
                                   (False,s) -> if tempScope scope
                                                then writer (True,s)
                                                else if s == "not a channel"
-                                                    then writer (False, "Error: In trigger declaration [" ++ id 
-                                                                   ++ "], the bind [" 
+                                                    then writer (False, "Error: In trigger declaration [" ++ id
+                                                                   ++ "], the bind ["
                                                                    ++ show bind ++ "] is not recognised.\n")
-                                                    else writer (False, "Error: Trigger declaration [" ++ id 
-                                                                        ++ "] uses wrong argument(s) [" 
+                                                    else writer (False, "Error: Trigger declaration [" ++ id
+                                                                        ++ "] uses wrong argument(s) ["
                                                                         ++ addComma zs ++ "] in the method component.\n")
                         else writer (False, s)
 
 --Method handling new
 checkMNforNew :: MethodName -> Bind -> [Bind] -> [Bind] -> Trigger ->  [String] -> Writer String Bool
-checkMNforNew mn bind bs rs id zs = 
+checkMNforNew mn bind bs rs id zs =
  case bind of
       BindId id -> if (mn /= "new")
                    then return False
                    else if null rs
                         then writer (False,"Error: new cannot be associated to an entry trigger.\n")
                         else if elem (BindType id (getIdBind (head rs))) bs
-                             then if null zs 
+                             then if null zs
                                   then return True
-                                  else writer (False, "Error: Trigger declaration [" ++ id 
-                                                      ++ "] uses wrong argument(s) [" ++ addComma zs 
+                                  else writer (False, "Error: Trigger declaration [" ++ id
+                                                      ++ "] uses wrong argument(s) [" ++ addComma zs
                                                       ++ "] in the method component.\n")
                              else writer (False, "Error: Wrong exit object in trigger " ++ id ++ "\n.")
       _         -> return False
 
 --Method handling channels
 checkForChannel :: Bind -> Env -> Writer String Bool
-checkForChannel bind env = 
+checkForChannel bind env =
  case bind of
-      BindId id -> let vars = map varDecId $ concatMap getVarDeclVar 
+      BindId id -> let vars = map varDecId $ concatMap getVarDeclVar
                               $ filter (\v -> getTypeVar v == "Channel") $ varsInModel env
                    in if elem id vars
                       then writer (True,id)
@@ -386,7 +386,7 @@ getCompTrigger ce =
                                  return (OnlyIdPar id')
 
 getCompTriggers :: Abs.CompoundTrigger -> Writer String CompoundTrigger
-getCompTriggers (Abs.Collection (Abs.CECollection esl wc)) = 
+getCompTriggers (Abs.Collection (Abs.CECollection esl wc)) =
  do let xs = map getCEElement esl
     let wc' = getWhereClause wc
     ce <- writer $ _2 %~ (addComma . filter (not.null)) $ unzip $ map runWriter xs
@@ -394,13 +394,13 @@ getCompTriggers (Abs.Collection (Abs.CECollection esl wc)) =
 getCompTriggers ce                                         = getCompTrigger ce
 
 getCEElement :: Abs.CEElement -> Writer String CEElement
-getCEElement (Abs.CEct ct)    = 
+getCEElement (Abs.CEct ct)    =
  do ct' <- getCompTriggers ct
     return (CEct ct')
-getCEElement (Abs.CEid id)    = 
+getCEElement (Abs.CEid id)    =
  let id' = getIdAbs id
  in return (CEid id')
-getCEElement (Abs.CEidpar id) = 
+getCEElement (Abs.CEidpar id) =
  let id' = getIdAbs id
  in return (CEidpar id')
 
@@ -411,7 +411,7 @@ getTriggerVariation Abs.EVENil         = EVENil
 
 --Checks if the triggers in the collections are defined
 checkCollectionTrPPD :: Triggers -> UpgradeModel ()
-checkCollectionTrPPD trs = 
+checkCollectionTrPPD trs =
  do env <- get
     case runWriter (checkCollectionTr trs env) of
          (trs', s) -> if null s
@@ -420,23 +420,23 @@ checkCollectionTrPPD trs =
 
 checkCollectionTr :: Triggers -> Env -> Writer String [Trigger]
 checkCollectionTr [] _         = return []
-checkCollectionTr (tr:trs) env = 
+checkCollectionTr (tr:trs) env =
  case tr ^. compTrigger of
-      Collection (CECollection ces wc) 
+      Collection (CECollection ces wc)
                     -> do trs' <- checkCollectionTr trs env
                           case runWriter (checkTriggerCE tr env) of
-                               (tr',s) -> do pass $ return ((), \s' -> s ++ s') 
-                                             return (tr'++trs') 
+                               (tr',s) -> do pass $ return ((), \s' -> s ++ s')
+                                             return (tr'++trs')
       _             -> do trs' <- checkCollectionTr trs env
                           return (tr ^. tName:trs')
 
 checkTriggerCE :: TriggerDef -> Env -> Writer String [Trigger]
-checkTriggerCE tr env = 
+checkTriggerCE tr env =
  case (tr ^. compTrigger) of
       Collection (CECollection ces wc) -> do let xs = getTriggersInCE ces
                                              let ys = [y | y <- xs, not (elem y (map tiTN $ allTriggers env))]
                                              if (not.null) ys
-                                             then writer (xs,"Error: In trigger collection " ++ tr ^. tName 
+                                             then writer (xs,"Error: In trigger collection " ++ tr ^. tName
                                                              ++ ", the trigger(s) [" ++ addComma ys
                                                              ++ "] is(are) used, but not previously defined.\n")
                                              else return xs
@@ -512,10 +512,13 @@ getProperty Abs.PropertiesNil _ env _                                           
 getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms env scope =
  case runWriter (getTransitions (getIdAbs id) trans env scope) of
       ((t,env'),s') ->
-           let ts      = map (trigger.arrow) t              
+           let ts      = map (trigger.arrow) t
                xs      = [x | x <- ts, not (elem x enms)]
                pname   = getIdAbs id
                states' = getStates' states
+               sts'    = getAccepting states' ++ getStarting states'
+                           ++ getBad states' ++ getNormal states'
+               states'' = map (^. getNS) sts'
                s''     = execWriter $ checkStatesWF states' pname t
                cns     = (initprop env) ^. ipropID
                (accep,n1)  = checkAllHTsExist (getAccepting states') 0 cns pname scope
@@ -527,7 +530,7 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                errs'  = errs ++ ip
             in if (n1 + n2 + n3 + n4 == 1)
                then if (alreadyAnnotatedIP (initprop env'))
-                    then do let er = "Error: Initial property annotated in multiple properties: [" 
+                    then do let er = "Error: Initial property annotated in multiple properties: ["
                                       ++ pname ++ ", " ++ (initprop env') ^. ipPropn ++ "].\n"
                             let er' = if Abs.PropertiesNil == props
                                       then ""
@@ -539,11 +542,9 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
-                                             , pProps       = p },env'' {sts = removeDuplicates (sts env'')})
+                                             , pProps       = p },env'' {sts = states''})
                     else do let ip'   = ipScope %~ (const scope) $ (initprop env')
                             let ip''  = ipPropn %~ (const pname) $ ip'
-                            let sts'  = getAccepting states' ++ getStarting states' 
-                                        ++ getBad states' ++ getNormal states'
                             let name = annotatedState sts'
                             let ip''' = ipStn %~ (const name) $ ip''
                             let env'' = env' { initprop = ip''' }
@@ -557,7 +558,7 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                             return (Property { pName        = pname
                                              , pStates      = states'
                                              , pTransitions = t
-                                             , pProps       = p },env''' {sts = removeDuplicates (sts env''')})
+                                             , pProps       = p },env''' {sts = states''})
                else do --(p,env'') <- getProperty props enms env' scope
                        let er' = if Abs.PropertiesNil == props
                                  then ""
@@ -568,11 +569,11 @@ getProperty (Abs.ProperiesDef id (Abs.PropKindNormal states trans) props) enms e
                        return (Property { pName        = pname
                                         , pStates      = states'
                                         , pTransitions = t
-                                        , pProps       = p },env'' {sts = removeDuplicates (sts env'')})
+                                        , pProps       = p },env'' {sts = states''})
 
 getStates' :: Abs.States -> States
 getStates' (Abs.States start accep bad norm) = States { getStarting = getStarting' start
-                                                      , getAccepting = getAccepting' accep 
+                                                      , getAccepting = getAccepting' accep
                                                       , getBad = getBad' bad
                                                       , getNormal = getNormal' norm
                                                       }
@@ -609,7 +610,7 @@ checkStatesWF sts pn trans =
 
 --Checks if there is one (and only one) starting state
 oneStarting :: States -> PropertyName -> Writer String ()
-oneStarting sts pn = 
+oneStarting sts pn =
  case length (getStarting sts) of
       0 -> tell ("Error: There is no starting state " ++ "in property " ++ pn ++ ".\n")
       1 -> return ()
@@ -617,16 +618,16 @@ oneStarting sts pn =
 
 --Checks if all the states used in the transitions exist
 stateTransE :: Transitions -> States -> PropertyName -> Writer String ()
-stateTransE trans sts pn = 
+stateTransE trans sts pn =
  let all  = map (^. getNS) $ allStates sts
      stsT = concatMap (\ t -> [fromState t,toState t]) trans
      xs   = [y | y <- stsT , not (elem y all)]
  in if null xs
     then return ()
-    else tell (msg xs) 
+    else tell (msg xs)
                where msg xs = if length xs > 1
-                              then "Error: In property " ++ pn 
-                                   ++ ", the following state names used in the transitions do not exist: " 
+                              then "Error: In property " ++ pn
+                                   ++ ", the following state names used in the transitions do not exist: "
                                    ++ show xs ++ ".\n"
                               else "Error: In property " ++ pn
                                    ++ ", the following state name used in the transitions do not exist: "
@@ -634,11 +635,11 @@ stateTransE trans sts pn =
 
 --Checks if the names of the states are unique.
 uniqueNamesStates :: States -> PropertyName -> Writer String ()
-uniqueNamesStates sts pn = 
+uniqueNamesStates sts pn =
  let all = uniqueNames $ allStates sts
  in if null all
     then return ()
-    else tell (msg all) 
+    else tell (msg all)
                where msg xs = if length xs > 1
                               then "Error: In property " ++ pn
                                    ++ ", the following state names are not unique: " ++ show xs ++ ".\n"
@@ -662,7 +663,7 @@ sameNameStates (x:xs) = getSameNameStates x xs ++ sameNameStates xs
 
 getSameNameStates :: State -> [State] -> [State]
 getSameNameStates st []     = []
-getSameNameStates st (x:xs) = 
+getSameNameStates st (x:xs) =
  if (stateEq st x)
  then x:getSameNameStates st xs
  else getSameNameStates st xs
@@ -671,21 +672,21 @@ stateEq :: State -> State -> Bool
 stateEq st st' = st == st' || st ^. getNS == st' ^. getNS
 
 getTransitions :: PropertyName -> Abs.Transitions -> Env -> Scope -> Writer String (Transitions,Env)
-getTransitions id (Abs.Transitions ts) env scope = 
+getTransitions id (Abs.Transitions ts) env scope =
  do xs <- sequence $ map (getTransition' id env scope) ts
     let trans = map fst xs
     let ys    = [fromState tr | tr <- trans] ++ [toState tr | tr <- trans]
     return (trans,env {sts = ys})
 
 getTransition' :: PropertyName -> Env -> Scope -> Abs.Transition -> Writer String (Transition,Env)
-getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2) pre fun post acts) = 
+getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2) pre fun post acts) =
  case runWriter (getArrow pre fun post acts env scope) of
-      ((xs,env'),s) -> 
-          do let err = "Error: Parsing error in an action of a transition from state " 
-                        ++ getIdAbs q1 ++ " to state " 
+      ((xs,env'),s) ->
+          do let err = "Error: Parsing error in an action of a transition from state "
+                        ++ getIdAbs q1 ++ " to state "
                         ++ getIdAbs q2 ++ " in property " ++ id ++ ".\n"
              let s' = if null s then "" else err ++ s
-             tell s'                  
+             tell s'
              return (Transition { fromState = getIdAbs q1
                                 , arrow = xs
                                 , toState = getIdAbs q2
@@ -693,25 +694,25 @@ getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2
 
 getArrow :: Abs.CondExp -> Abs.Id -> Abs.CondExp -> [Abs.Action] ->
             Env -> Scope -> Writer String (Arrow,Env)
-getArrow pre fun post acts env scope = 
+getArrow pre fun post acts env scope =
  let act' = (trim.printTree) acts in
- case ParAct.parse act' of 
+ case ParAct.parse act' of
       Bad s -> do tell s
-                  return $ (Arrow { trigger  = printTree fun, 
-                                    precond  = printTree pre, 
-                                    postcond = printTree post, 
+                  return $ (Arrow { trigger  = printTree fun,
+                                    precond  = printTree pre,
+                                    postcond = printTree post,
                                     action   = "Parse error" },env)
-      Ok (Act.Actions ac) -> 
+      Ok (Act.Actions ac) ->
          case runWriter $ sequence (map (\a -> checkTempInCreate a env) ac) of
               (ac',s') -> do tell s'
                              let ac'' = filter isCreateAct ac'
                              let acts = [CAI y z "" x scope | (y,z,x) <- concatMap getIdAndArgs ac'']
                              let env' = env { allCreateAct = acts ++ (allCreateAct env)}
-                             return $ (Arrow { trigger  = printTree fun, 
-                                               precond  = printTree pre, 
-                                               postcond = printTree post, 
+                             return $ (Arrow { trigger  = printTree fun,
+                                               precond  = printTree pre,
+                                               postcond = printTree post,
                                                action   = act' },env')
- 
+
 isCreateAct :: Act.Action -> Bool
 isCreateAct (Act.ActCreate _ _) = True
 isCreateAct (Act.ActCond _ act) = isCreateAct act
@@ -723,19 +724,19 @@ getIdAndArgs ac@(Act.ActCreate (Act.Temp (Act.IdAct id)) args) = [(id,args,ac)]
 getIdAndArgs (Act.ActCond _ act)                               = getIdAndArgs act
 getIdAndArgs (Act.ActBlock (Act.Actions acts))                 = concatMap getIdAndArgs acts
 getIdAndArgs _                                                 = []
-            
+
 checkTempInCreate :: Act.Action -> Env -> Writer String Act.Action
-checkTempInCreate ac@(Act.ActCreate (Act.Temp (Act.IdAct id) ) _) env = 
+checkTempInCreate ac@(Act.ActCreate (Act.Temp (Act.IdAct id) ) _) env =
  let tmpids = map fst $ tempsInfo env
  in if not (elem id tmpids)
     then do tell $ "Template " ++ id ++ ", which is used in an action create does not exist.\n"
             return ac
     else return ac
-checkTempInCreate (Act.ActCond conds act) env = 
+checkTempInCreate (Act.ActCond conds act) env =
  case runWriter $ checkTempInCreate act env of
       (ac,s) -> do tell s
                    return $ Act.ActCond conds ac
-checkTempInCreate (Act.ActBlock (Act.Actions acts)) env     = 
+checkTempInCreate (Act.ActBlock (Act.Actions acts)) env     =
  case runWriter $ sequence $ map (\act -> checkTempInCreate act env) acts of
       (ac,s) -> do tell s
                    return $ Act.ActBlock (Act.Actions ac)
@@ -747,15 +748,15 @@ checkTempInCreate act env                     = return act
 ---------------
 
 getForeaches :: Abs.Foreaches -> Context -> Scope -> UpgradeModel Context
-getForeaches Abs.ForeachesNil ctxt _ = 
- do env <- get    
-    put env { actes = actes env ++ map show (ctxt ^. actevents)} 
+getForeaches Abs.ForeachesNil ctxt _ =
+ do env <- get
+    put env { actes = actes env ++ map show (ctxt ^. actevents)}
     return ctxt
 getForeaches _ _ _  = fail "Error: This version of Aesir does not support FOREACH constructs.\n"
 {-
-getForeaches (Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ (Abs.ForeachesDef args actxt fors)) afors) _ _ = 
+getForeaches (Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ (Abs.ForeachesDef args actxt fors)) afors) _ _ =
  fail "Error: Aesir does not support nested Foreaches.\n"
-getForeaches afors@(Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ Abs.ForeachesNil) _) ctxt scope = 
+getForeaches afors@(Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ Abs.ForeachesNil) _) ctxt scope =
  let afors' = prepareForeaches afors
  in do env <- get
        put env { actes = actes env ++ map show (ctxt ^. actevents)}
@@ -766,25 +767,25 @@ getForeaches afors@(Abs.ForeachesDef _ (Abs.Ctxt _ _ _ _ Abs.ForeachesNil) _) ct
 
 prepareForeaches :: Abs.Foreaches -> [Abs.Foreaches]
 prepareForeaches Abs.ForeachesNil                  = []
-prepareForeaches (Abs.ForeachesDef args ctxt fors) = 
+prepareForeaches (Abs.ForeachesDef args ctxt fors) =
  (Abs.ForeachesDef args ctxt Abs.ForeachesNil):prepareForeaches fors
 
 createIds :: Scope -> [Abs.Foreaches] -> [ForId]
 createIds TopLevel afors          = map (ForId . show) [1..length afors]
-createIds (InFor (ForId s)) afors = 
- if s == "TopLevel" 
+createIds (InFor (ForId s)) afors =
+ if s == "TopLevel"
  then [ForId s]
  else map (ForId . (s++) . show) [1..length afors]
 
 getForeach :: Abs.Foreaches -> ForId -> UpgradeModel Foreach
-getForeach (Abs.ForeachesDef args ctxt Abs.ForeachesNil) id = 
+getForeach (Abs.ForeachesDef args ctxt Abs.ForeachesNil) id =
  do ctxt' <- getCtxt ctxt (InFor id)
-    env <- get    
+    env <- get
     case ctxt' ^. foreaches of
       [] -> do let args'     = map getArgs args
                let propn     = pName $ ctxt' ^. property
-               let Args t cl = head $ args'               
-               put env { propInForeach = (propn,t,cl):propInForeach env }               
+               let Args t cl = head $ args'
+               put env { propInForeach = (propn,t,cl):propInForeach env }
                return $ Foreach args' ctxt' id
       _  -> fail $ "Error: Aesir does not support nested Foreaches.\n"
 
@@ -795,31 +796,31 @@ getForeach (Abs.ForeachesDef args ctxt Abs.ForeachesNil) id =
 
 genTemplates :: Abs.Templates -> UpgradeModel Templates
 genTemplates Abs.TempsNil   = return TempNil
-genTemplates (Abs.Temps xs) = 
+genTemplates (Abs.Temps xs) =
  fail "Error: This version of Aesir does not support the use of TEMPLATES.\n"
 {-
  do xs <- sequence $ map genTemplate xs
     env <- get
     put env { tempsInfo = tempsInfo env ++ foldr (\ x xs -> (x ^. tempId, x ^. tempBinds) : xs) [] xs}
-    return $ Temp xs 
+    return $ Temp xs
 -}
 
 --TODO: If templates added to the model, modify to check whether initial prop is not annotated in
 --multiple scopes, and add the scope to the initprop component if the initial prop is only annotated in a template
 genTemplate :: Abs.Template -> UpgradeModel Template
-genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) = 
+genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
  do args' <- hasReferenceType (map ((uncurry makeArgs).getArgsAbs) args) (getIdAbs id)
     trigs' <- getTriggers trs (InTemp (getIdAbs id)) args'
     env <- get
     --let cns   = (initprop env) ^. ipropID
     let prop' = getProperty prop (map (^. tName) trigs') env (InTemp (getIdAbs id))
     case runWriter prop' of
-         ((PNIL,env'),_)                      -> fail $ "Error: The template " ++ getIdAbs id 
+         ((PNIL,env'),_)                      -> fail $ "Error: The template " ++ getIdAbs id
                                                         ++ " does not have a PROPERTY section.\n"
-         ((Property pname states trans props, env'), s) -> 
+         ((Property pname states trans props, env'), s) ->
                   let s'      = s ^. _2 ++ s ^. _3 ++ s ^. _4
-                                ++ if props /= PNIL 
-                                   then "Error: In template " ++ getIdAbs id 
+                                ++ if props /= PNIL
+                                   then "Error: In template " ++ getIdAbs id
                                         ++ ", it should describe only one property.\n"
                                    else ""
                       temptrs = s ^. _1
@@ -835,22 +836,22 @@ genTemplate (Abs.Temp id args (Abs.Body vars ies trs prop)) =
                                                }
 
 hasReferenceType :: [Args] -> String -> UpgradeModel [Args]
-hasReferenceType xs id = 
+hasReferenceType xs id =
  case filterRefTypes xs of
       [] -> fail $ "Error: The template " ++ id ++ " does not have any reference type as argument.\n"
       _  -> return xs
 
 --Check for the arguments used in the create actions
 wellFormedActions :: UpgradeModel CModel -> String
-wellFormedActions model = 
+wellFormedActions model =
  let env = getEnvVal model in
  case runWriter $ sequence $ map (wellFormedAction env) (allCreateAct env) of
       (b,s) -> if and b
                then ""
-               else s 
+               else s
 
 wellFormedAction:: Env -> CreateActInfo -> Writer String Bool
-wellFormedAction env cai = 
+wellFormedAction env cai =
  let xs = [ tmp | tmp <- tempsInfo env, fst tmp == (cai ^. caiId)]
  in if null xs
     then writer (False, "Error: In an action create, the template " ++ cai ^. caiId ++ " does not exist.\n")
@@ -866,7 +867,7 @@ wellFormedAction env cai =
 
 splitTempArgs :: [(Args,Act.Args)] -> TempArgs -> TempArgs
 splitTempArgs [] targs         = targs
-splitTempArgs (arg:args) targs = 
+splitTempArgs (arg:args) targs =
  case getArgsType (fst arg) of
       "Action"     -> splitTempArgs args (targs {targAct = arg : targAct targs})
       "Condition"  -> splitTempArgs args (targs {targCond = arg : targCond targs})
@@ -876,7 +877,7 @@ splitTempArgs (arg:args) targs =
 
 --TODO: Update if Hoare triples are added to the model
 checkTempArgs :: TempArgs -> Env -> Scope -> Writer String [Bool]
-checkTempArgs targs env scope = 
+checkTempArgs targs env scope =
  sequence [ checkTempArgsActions (map snd $ targAct targs)
 --          , checkTempArgsHTriples (map snd $ targHT targs) (htsNames env)
           , checkTempArgsConditions (map snd $ targCond targs)
@@ -886,18 +887,18 @@ checkTempArgs targs env scope =
 
 checkTempArgsActions :: [Act.Args] -> Writer String Bool
 checkTempArgsActions []    = return True
-checkTempArgsActions targs = 
+checkTempArgsActions targs =
  let (xs,ys) = partitionErr $ map (ParAct.parse . (\xs -> xs ++ ";") . showActArgs) targs
- in if null xs 
+ in if null xs
     then return True
     else writer (False, "Error: In an action create: " ++ (unlines $ map fromBad xs))
 
 checkTempArgsHTriples :: [Act.Args] -> [HTName] -> Writer String Bool
 checkTempArgsHTriples [] _      = return True
-checkTempArgsHTriples targs hts = 
+checkTempArgsHTriples targs hts =
  let xs = [ h | h <- map showActArgs targs, not (elem h hts)]
  in if null xs
-    then return True 
+    then return True
     else writer (False, "Error: In an action create, the Hoare triple(s) [" ++ addComma xs ++ "] do(es) not exist.\n")
 
 showActArgs :: Act.Args -> String
@@ -906,27 +907,27 @@ showActArgs (Act.ArgsS s)                                      = s
 showActArgs (Act.ArgsNew (Act.Prog (Act.IdAct id) args inner)) = "new " ++ id ++ PrintAct.printTree args ++ PrintAct.printTree inner
 showActArgs act                                                = PrintAct.printTree act
 
-checkTempArgsConditions :: [Act.Args] -> Writer String Bool 
-checkTempArgsConditions targs = 
+checkTempArgsConditions :: [Act.Args] -> Writer String Bool
+checkTempArgsConditions targs =
  let (xs,ys) = partitionErr $ map (ParJML.parse . showActArgs) targs
- in if null xs 
+ in if null xs
     then return True
     else writer (False, "Error: In an action create, syntax error(s) on the condition(s) [" ++ addComma (map fromBad xs) ++ "].\n")
 
 checkTempArgsTriggers :: [Act.Args] -> [TriggersInfo] -> Scope -> Writer String Bool
-checkTempArgsTriggers targs tinfs scope = 
+checkTempArgsTriggers targs tinfs scope =
  let xs = [ tr | tr <- map showActArgs targs, tinf <- tinfs, tiScope tinf == scope, tiTN tinf == tr]
  in if length xs == length targs
-    then return True 
-    else writer (False, "Error: In an action create, the trigger(s) [" ++ addComma xs ++ "] do(es) not exist.\n") 
+    then return True
+    else writer (False, "Error: In an action create, the trigger(s) [" ++ addComma xs ++ "] do(es) not exist.\n")
 
 checkMethodNames :: [Act.Args] -> [(String, ClassInfo, JavaFilesInfo)] -> Writer String Bool
 checkMethodNames targs minfs =
  let xs = removeDuplicates [ mn | mn <- map showActArgs targs, xs <- minfs, mn' <- methodsInFiles (xs ^. _3), mn == (mn' ^. _2) ]
  in if length xs == length targs
-    then return True 
-    else writer (False, "Error: In an action create, the method(s) [" 
-                        ++ addComma [ x | x <- map showActArgs targs, not (elem x xs)] ++ "] do(es) not exist.\n") 
+    then return True
+    else writer (False, "Error: In an action create, the method(s) ["
+                        ++ addComma [ x | x <- map showActArgs targs, not (elem x xs)] ++ "] do(es) not exist.\n")
 
 
 -----------------
@@ -945,9 +946,9 @@ genClassInvariants' Abs.CInvempty           = return []
 genClassInvariants' (Abs.CInvariants cinvs) = sequence $ map getCInv cinvs
 
 getCInv :: Abs.CInvariant -> Writer String CInvariant
-getCInv (Abs.CI cn jml) = 
+getCInv (Abs.CI cn jml) =
  case runWriter (getJML jml "") of
-      (jml',s) -> if null s 
+      (jml',s) -> if null s
                   then return $ CI (getIdAbs cn) jml'
                   else do tell $ "Error: Parse on error on class invariant [" ++ printTree jml ++ "] for the class " ++ getIdAbs cn ++ ".\n"
                           return CInvNil
@@ -997,12 +998,12 @@ getConstNameAbs :: Abs.HTName -> Abs.Id
 getConstNameAbs (Abs.CN id) = id
 
 getJML :: Abs.JML -> String -> Writer String JMLExp
-getJML jml str = 
+getJML jml str =
  let jml' = printTree jml in
  case ParJML.parse jml' of
       Bad s -> do tell $ "Error: JML syntax error on the " ++ str
                   return "Error: Parse error "
-      Ok _  -> return jml' 
+      Ok _  -> return jml'
 
 getJava :: Abs.Java -> Java
 getJava java = printTree java
@@ -1026,7 +1027,7 @@ mAppend (x:xs) (y:ys) = (x:xs) ++ "," ++ y:ys
 checkAllHTsExist :: [State] -> Int -> Id -> PropertyName -> Scope -> ([String],Int)
 checkAllHTsExist [] n _ _ _            = ([],n)
 checkAllHTsExist (s:ss) n "" pn scope  = error $ "Error: Initial property name component is empty.\n"
-checkAllHTsExist (s:ss) n cns pn scope = 
+checkAllHTsExist (s:ss) n cns pn scope =
  let ns   = s ^. getNS
      cns' = s ^. getCNList
      aux  = [x | x <- cns' , not (x == cns)]
@@ -1037,7 +1038,7 @@ checkAllHTsExist (s:ss) n cns pn scope =
          ++ ", in state " ++ ns ++ ", the initial property ["
          ++ addComma aux
          ++ "] do(es) not exist.\n") : a ,b + n')
-                              where (a,b) = checkAllHTsExist ss n cns pn scope 
+                              where (a,b) = checkAllHTsExist ss n cns pn scope
 
 multipleInitS :: (Int, String) -> String
 multipleInitS (0,_)            = ""
@@ -1048,15 +1049,15 @@ mkErrTuple :: ([String], String,String,String) -> [String] -> String -> String -
 mkErrTuple s xs s' s'' s''' = (s ^. _1 ++ xs, s' ++ s ^. _2, s ^. _3 ++ s'', s ^. _4 ++ s''')
 
 alreadyAnnotatedIP :: IPropInfo -> Bool
-alreadyAnnotatedIP ip = 
- let propn = ip ^. ipPropn 
+alreadyAnnotatedIP ip =
+ let propn = ip ^. ipPropn
      scope = ip ^. ipScope
      names = ip ^. ipStn
  in not (null propn && scope == TopLevel && null names)
 
 annotatedState :: [State] -> String
 annotatedState []     = ""
-annotatedState (s:ss) = 
+annotatedState (s:ss) =
  if ((not.null) (s ^. getCNList))
  then s ^. getNS
  else annotatedState ss
@@ -1068,12 +1069,12 @@ annotatedState (s:ss) =
 data Env = Env
  { allTriggers     :: [TriggersInfo]
  , javaFilesInfo   :: [(JPath, ClassInfo, JavaFilesInfo)]
- , varsInModel     :: Variables                    
+ , varsInModel     :: Variables
  , tempsInfo       :: [(Id,[Args])]--[(name_template, args_of_template)]
  , propInForeach   :: [(PropertyName, ClassInfo, String)]-- is used to avoid ambigous reference to variable id in foreaches
  , actes           :: [Id] --list of all defined action events
  , allCreateAct    :: [CreateActInfo]--list of all actions \create used in the transitions of the model
- , sts             :: [NameState] --States of the model
+ , sts             :: [NameState] --States in the transitions of the model
  , initprop        :: IPropInfo
  }
   deriving (Show)
@@ -1099,21 +1100,21 @@ getClassVarName _ _ args BindStarCall _ _ _                 = return ("*","")
 getClassVarName _ _ args (BindType t id) _ _ _              = return (t,id)
 getClassVarName _ _ args (BindTypeExec t id) _ _ _          = return (t,id)
 getClassVarName _ _ args (BindTypeCall t id) _ _ _          = return (t,id)
-getClassVarName tr mn args bindid s scope argsTemp = 
- let id  = getIdBind bindid 
+getClassVarName tr mn args bindid s scope argsTemp =
+ let id  = getIdBind bindid
      ts' = [getBindTypeType arg | arg <- args, getIdBind arg == id ]
      ts  = if (null ts') then prepareValUpd mn s id s else ts'
  in if (length ts /= 1)
     then if tempScope scope
          then let xs = [ getArgsType arg | arg <- argsTemp, getArgsId arg == id]
-              in if null xs 
+              in if null xs
                  then return ("",id)
                  else return (head xs,id)
-         else fail $ "The trigger " ++ tr ++ " does not include a class variable declaration.\n" 
+         else fail $ "The trigger " ++ tr ++ " does not include a class variable declaration.\n"
     else return (head ts,id)
- 
+
 prepareValUpd :: MethodName -> String -> String -> String -> [String]
-prepareValUpd mn s id chan = 
+prepareValUpd mn s id chan =
  if mn == "new"
  then [id]
  else if null s
@@ -1121,7 +1122,7 @@ prepareValUpd mn s id chan =
       else [chan]
 
 updateInfo :: Map.Map MethodName [(Id, String, [Args],Scope)] -> MethodName -> (Id, String, [Args],Scope) -> Map.Map MethodName [(Id, String, [Args],Scope)]
-updateInfo m mn einfo = 
+updateInfo m mn einfo =
  case Map.lookup mn m of
       Nothing -> Map.insert mn [einfo] m
       Just xs -> Map.insert mn (einfo:xs) m
@@ -1139,4 +1140,3 @@ getValue uppd = fst . fromOK $ runStateT uppd emptyEnv
 
 getEnvVal :: UpgradeModel a -> Env
 getEnvVal uppd = snd . fromOK $ runStateT uppd emptyEnv
-
