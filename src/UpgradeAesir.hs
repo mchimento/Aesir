@@ -80,8 +80,8 @@ genIProp :: Abs.IProp -> Writer String IProp
 genIProp (Abs.IProp id jml) = 
  case runWriter (getJML jml "initial property.") of
       (jml', []) -> return $ IProp (getIdAbs id) jml'
-      (_,errs)   -> fail errs
-
+      (_,errs)   -> do tell errs
+                       return $ IProp "Error" ""
 -----------
 -- Model --
 -----------

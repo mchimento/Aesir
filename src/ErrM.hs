@@ -8,15 +8,18 @@ module ErrM where
 
 import Control.Monad (MonadPlus(..), liftM)
 import Control.Applicative (Applicative(..), Alternative(..))
+import qualified Control.Monad.Fail as Fail
 
 data Err a = Ok a | Bad String
   deriving (Read, Show, Eq, Ord)
 
 instance Monad Err where
   return      = Ok
-  fail        = Bad
   Ok a  >>= f = f a
   Bad s >>= _ = Bad s
+
+instance Fail.MonadFail Err where
+  fail = Bad
 
 instance Applicative Err where
   pure = Ok

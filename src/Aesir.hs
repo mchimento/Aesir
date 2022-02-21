@@ -23,7 +23,7 @@ import Java.JavaFilesAnalysis
 -------------
 
 version :: String
-version = "Aesir 0.0.0.0"
+version = "Aesir 1.0.0.0"
 
 -- version meaning   +--------- version ID
 --                   | +------- version ID

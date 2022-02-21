@@ -57,8 +57,8 @@ getMethods = (map methodsDetails) . (getMethodDecl.getDecls.getClassBody)
 -------------------------
 
 methodsDetails :: MemberDecl -> (String, String, [String],[Exp],String)
-methodsDetails (MethodDecl mods _ Nothing (Ident mn) args _ body)   = ("void",mn,map prettyPrint args, getMethodsInvocation body,getModifier $ map prettyPrint mods)
-methodsDetails (MethodDecl mods _ (Just rt) (Ident mn) args _ body) = (prettyPrint rt,mn,map prettyPrint args, getMethodsInvocation body,getModifier $ map prettyPrint mods)
+methodsDetails (MethodDecl mods _ Nothing (Ident mn) args _ _ body)   = ("void",mn,map prettyPrint args, getMethodsInvocation body,getModifier $ map prettyPrint mods)
+methodsDetails (MethodDecl mods _ (Just rt) (Ident mn) args _ _ body) = (prettyPrint rt,mn,map prettyPrint args, getMethodsInvocation body,getModifier $ map prettyPrint mods)
 
 --
 --Gets all method invocations within a method definition

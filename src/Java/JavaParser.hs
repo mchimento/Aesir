@@ -69,8 +69,8 @@ getMethodDecl []     = []
 getMethodDecl (d:ds) = 
  case d of
       MemberDecl md -> case md of 
-               MethodDecl _ _ _ _ _ _ _ -> md:getMethodDecl ds
-               _                        -> getMethodDecl ds
+               MethodDecl _ _ _ _ _ _ _ _ -> md:getMethodDecl ds
+               _                          -> getMethodDecl ds
       _             -> getMethodDecl ds
 
 getMethodDeclId :: [Decl] -> [String]
@@ -78,7 +78,7 @@ getMethodDeclId []     = []
 getMethodDeclId (d:ds) = 
  case d of
       MemberDecl md -> case md of 
-               MethodDecl _ _ _ (Ident id) _ _ _ 
+               MethodDecl _ _ _ (Ident id) _ _ _ _
                           -> id:getMethodDeclId ds
                _          -> getMethodDeclId ds
       _             -> getMethodDeclId ds
@@ -117,7 +117,7 @@ instrumentMethodMemberDecl [] _        = []
 instrumentMethodMemberDecl (d:ds) mns  = 
  case d of
       MemberDecl md -> case md of 
-                            MethodDecl _ _ _ (Ident id) _ _ _ -> 
+                            MethodDecl _ _ _ (Ident id) _ _ _ _ -> 
                                let (m1,m2,over,mns') = generateMethods d mns
                                in if (m1 == Nothing)
                                   then instrumentMethodMemberDecl ds mns
@@ -131,19 +131,19 @@ instrumentMethodMemberDecl (d:ds) mns  =
 
 generateMethods :: Decl -> [((T.MethodName,T.Overriding),Int)] 
                     -> (Maybe Decl, Decl, T.Overriding, [((T.MethodName,T.Overriding),Int)])
-generateMethods md@(MemberDecl (MethodDecl public xs type' (Ident id) param ex mbody)) mns = 
+generateMethods md@(MemberDecl (MethodDecl public xs type' (Ident id) param ex mex mbody)) mns = 
  let mn_n = getMethodName id mns in
  if isJust mn_n
  then if (isJust type')
       then let new_body    = makeNewBodyRet id param (snd $ fromJust mn_n)
-               new_method  = MethodDecl public xs type' (Ident id) param ex new_body
+               new_method  = MethodDecl public xs type' (Ident id) param ex mex new_body
                id_arg      = FormalParam [] (RefType (ClassRefType (ClassType [(Ident "Integer",[])]))) False (VarId (Ident "id"))
-               method_inst = MethodDecl public xs type' (Ident (id ++ "Aux")) (param ++ [id_arg]) ex mbody
+               method_inst = MethodDecl public xs type' (Ident (id ++ "Aux")) (param ++ [id_arg]) ex mex mbody
            in (Just (MemberDecl new_method), MemberDecl method_inst, (snd.fst) $ fromJust mn_n, dropId mns id)
       else let new_body    = makeNewBodyVoid id param (snd $ fromJust mn_n)
-               new_method  = MethodDecl public xs type' (Ident id) param ex new_body
+               new_method  = MethodDecl public xs type' (Ident id) param ex mex new_body
                id_arg      = FormalParam [] (RefType (ClassRefType (ClassType [(Ident "Integer",[])]))) False (VarId (Ident "id"))
-               method_inst = MethodDecl public xs type' (Ident (id ++ "Aux")) (param ++ [id_arg]) ex mbody
+               method_inst = MethodDecl public xs type' (Ident (id ++ "Aux")) (param ++ [id_arg]) ex mex mbody
            in (Just (MemberDecl new_method), MemberDecl method_inst, (snd.fst) $ fromJust mn_n, dropId mns id)
  else (Nothing, md, T.OverNil,mns)
 
