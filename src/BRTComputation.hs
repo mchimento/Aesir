@@ -46,7 +46,7 @@ brt cm t mp iter trs out_add =
     then do let toAnalyse_add = out_add ++ "workspace/files2analyse"
             let hts = nameHTS 0 (t ^. idBrt) $ map (mkHT (t ^. prop) trs) $ fromJust ts
             injectJMLannotations cm toAnalyse_add hts
-            --runKeY toAnalyse_add out_add
+            runKeY toAnalyse_add (out_add++"workspace/")
             putStrLn "Backwards reachability tree computation... [DONE]"
             return t
          else do putStrLn $ "Aesir: Error when computing reachability for the state "
@@ -82,12 +82,20 @@ mkMCN tr trs =
   Nothing   -> MCN "" "" OverNil
   Just tinf -> MCN (tiCI tinf) (tiMN tinf) OverNil
 
+replaceClassVarWith :: Trigger -> [TriggersInfo] -> String -> String
+replaceClassVarWith tr trs c =
+  case getTrInfo tr trs of
+   Nothing   -> "true"
+   Just tinf -> let cv = tiCVar tinf in
+                let xs = splitOnIdentifier cv c
+                in head xs ++ concat (map ("this" ++) (tail xs))
 
+--TODO:Update this function to refine properties using postconditions
 mkHT :: JMLExp -> [TriggersInfo] -> Transition -> HT
 mkHT jmlexp trs (Transition q (Arrow tr c _ _) q') =
  HT { _htName     = ""
     , _methodCN   = mkMCN tr trs
-    , _pre        = c
+    , _pre        = replaceClassVarWith tr trs c
     , _post       = jmlexp
     , _assignable = "\\everything"
     , _newPRe     = []
