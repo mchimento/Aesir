@@ -21,7 +21,7 @@ import JML.JMLInjection
 ---------------------------------------------
 
 computeBRT :: UpgradeModel CModel -> Map.Map NameState Transitions -> Integer -> NameState -> FilePath -> FilePath -> IO BRT
-computeBRT cm mp iter st jpath out_add = 
+computeBRT cm mp iter st jpath out_add =
  do let toAnalyse_add = out_add ++ "workspace/files2analyse"
     let model   = getValue cm
     let trs     = allTriggers $ getEnvVal cm
@@ -29,8 +29,8 @@ computeBRT cm mp iter st jpath out_add =
     let root    = BRT Nothing [] initial st (getJMLEprop $ model ^. initpropGet) Nothing iter (getIdIprop $ model ^. initpropGet)
     createDirectoryIfMissing False toAnalyse_add
     copyFiles jpath toAnalyse_add
-    injectJMLinitial cm jpath toAnalyse_add
-    brt cm root mp iter trs jpath out_add
+    injectJMLinitial cm toAnalyse_add
+    brt cm root mp iter trs out_add
 
 --------------------------------------------------------
 -- Backwards reachability tree computation iterations --
@@ -38,25 +38,25 @@ computeBRT cm mp iter st jpath out_add =
 
 --TODO: Cannot handle the use of model variables in the preconditions
 --TODO: Cannot handle different methods with the same names, i.e., methods overriding
-brt :: UpgradeModel CModel -> BRT -> Map.Map NameState Transitions -> Integer -> 
-       [TriggersInfo] -> FilePath -> FilePath -> IO BRT
-brt cm t mp iter trs jpath out_add = 
+brt :: UpgradeModel CModel -> BRT -> Map.Map NameState Transitions -> Integer ->
+       [TriggersInfo] -> FilePath -> IO BRT
+brt cm t mp iter trs out_add =
  do let ts = Map.lookup (t ^. current) mp
     if isJust ts
     then do let toAnalyse_add = out_add ++ "workspace/files2analyse"
             let hts = nameHTS 0 (t ^. idBrt) $ map (mkHT (t ^. prop) trs) $ fromJust ts
-            injectJMLannotations cm jpath toAnalyse_add hts
+            injectJMLannotations cm toAnalyse_add hts
             --runKeY toAnalyse_add out_add
             putStrLn "Backwards reachability tree computation... [DONE]"
             return t
-         else do putStrLn $ "Aesir: Error when computing reachability for the state " 
+         else do putStrLn $ "Aesir: Error when computing reachability for the state "
                             ++ show (t ^. current) ++ "."
                  return BNil
 
 ---------------------------------
 -- Adds names to Hoare triples --
 ---------------------------------
-                       
+
 addNameHT :: Integer -> String -> HT -> HT
 addNameHT n name ht =
  htName .~ (name ++ show n) $ ht
@@ -77,14 +77,14 @@ getTrInfo tr (tinf:ts) =
  else getTrInfo tr ts
 
 mkMCN :: Trigger -> [TriggersInfo] -> MethodCN
-mkMCN tr trs = 
+mkMCN tr trs =
  case getTrInfo tr trs of
   Nothing   -> MCN "" "" OverNil
   Just tinf -> MCN (tiCI tinf) (tiMN tinf) OverNil
 
 
 mkHT :: JMLExp -> [TriggersInfo] -> Transition -> HT
-mkHT jmlexp trs (Transition q (Arrow tr c _ _) q') = 
+mkHT jmlexp trs (Transition q (Arrow tr c _ _) q') =
  HT { _htName     = ""
     , _methodCN   = mkMCN tr trs
     , _pre        = c
@@ -101,13 +101,12 @@ mkHT jmlexp trs (Transition q (Arrow tr c _ _) q') =
 -------------
 
 getExecutableDir :: IO FilePath
-getExecutableDir = 
+getExecutableDir =
  do expath <- getExecutablePath
     let xs = splitOnIdentifier "/" expath
     return (intercalate "/" $ init xs)
 
 runKeY :: FilePath -> FilePath -> IO ExitCode
-runKeY output_add' output_addr = 
+runKeY output_add' output_addr =
  do expath <- getExecutableDir
     rawSystem "java" ["-jar",expath++"/KeY/key.starvoors.jar","-starvoors",output_add', output_addr]
-

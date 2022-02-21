@@ -16,32 +16,30 @@ import Control.Lens hiding(Context,pre)
 -- Injecting Initial JML annotations --
 ---------------------------------------
 
-injectJMLinitial :: UpgradeModel CModel -> FilePath -> FilePath -> IO ()
-injectJMLinitial m jpath toAnalyse_add = 
+injectJMLinitial :: UpgradeModel CModel -> FilePath -> IO ()
+injectJMLinitial m toAnalyse_add =
  do let (model, env)  = fromOK $ runStateT m emptyEnv
     let imports       = model ^. importsGet
     let cinvs         = model ^. cinvariantsGet
     let ys            = splitCInvariants cinvs []
     let jinfo         = javaFilesInfo env
     let imports'      = [i | i <- imports,not (elem ((\ (Import s) -> s) i) importsInKeY)]
-    sequence_ $ map (\ i -> annotateInitTmpFiles i toAnalyse_add jpath jinfo ys) imports'
+    sequence_ $ map (\ i -> annotateInitTmpFiles i toAnalyse_add jinfo ys) imports'
 
 
-annotateInitTmpFiles :: Import -> FilePath -> FilePath -> [(String, ClassInfo, JavaFilesInfo)] 
+annotateInitTmpFiles :: Import -> FilePath -> [(String, ClassInfo, JavaFilesInfo)]
                     -> [(Class, CInvariants)]
                     -> IO ()
-annotateInitTmpFiles i output_add jpath jinfo ys = 
+annotateInitTmpFiles i output_add jinfo ys =
   do (main, cl) <- makeAddFile i
-     let jpath'      = jpath ++ "/" ++ main
      let output_add' = output_add ++ "/" ++ main
      createDirectoryIfMissing True output_add'
-     let file        = jpath' ++ "/" ++ (cl ++ ".java")  
-     let tmp         = output_add' ++ "/" ++ (cl ++ ".java")
+     let file         = output_add' ++ "/" ++ (cl ++ ".java")
      r <- readFile file
      let cinvs      = generateTmpFileCInv cl ys r
      let nullable   = updateTmpFileCInv cl jinfo cinvs
      let specPublic = updateSpecPublic cl jinfo nullable
-     rnf specPublic `seq` (writeFile tmp specPublic)
+     rnf specPublic `seq` (writeFile file specPublic)
      --use of rnf [s] `seq` [...] to force reading the content of the
      --file and close it
 
@@ -49,37 +47,35 @@ annotateInitTmpFiles i output_add jpath jinfo ys =
 -- Injecting JML annotations for Hoare triples --
 -------------------------------------------------
 
-injectJMLannotations :: UpgradeModel CModel -> FilePath -> FilePath -> HTriples -> IO ()
-injectJMLannotations ppd jpath toAnalyse_add hts = 
+injectJMLannotations :: UpgradeModel CModel -> FilePath -> HTriples -> IO ()
+injectJMLannotations ppd toAnalyse_add hts =
  do createDirectoryIfMissing False toAnalyse_add
-    prepareTmpFiles ppd toAnalyse_add jpath hts
+    prepareTmpFiles ppd toAnalyse_add hts
     return ()
 
 
-prepareTmpFiles :: UpgradeModel CModel -> FilePath -> FilePath -> HTriples -> IO [()]
-prepareTmpFiles m output_add jpath hts = 
+prepareTmpFiles :: UpgradeModel CModel -> FilePath -> HTriples -> IO [()]
+prepareTmpFiles m output_add hts =
  do let (model, env)  = fromOK $ runStateT m emptyEnv
     let imports       = model ^. importsGet
     let xs            = splitClassHT hts
     let join_xs       = joinClassHT xs []
     let consts_jml    = getHTs hts
     let imports'      = [i | i <- imports,not (elem ((\ (Import s) -> s) i) importsInKeY)]
-    sequence $ map (\ i -> annotateTmpFiles i output_add jpath join_xs consts_jml) imports'
+    sequence $ map (\ i -> annotateTmpFiles i output_add join_xs consts_jml) imports'
 
 
-annotateTmpFiles :: Import -> FilePath -> FilePath -> 
+annotateTmpFiles :: Import -> FilePath ->
                     [(ClassInfo, [HTName])] -> HTjml -> IO ()
-annotateTmpFiles i output_add jpath jxs consts_jml = 
+annotateTmpFiles i output_add jxs consts_jml =
   do (main, cl) <- makeAddFile i
-     let jpath'      = jpath ++ "/" ++ main
      let output_add' = output_add ++ "/" ++ main
      createDirectoryIfMissing True output_add'
-     let file        = jpath' ++ "/" ++ (cl ++ ".java")  
-     let tmp         = output_add' ++ "/" ++ (cl ++ ".java")
+     let file         = output_add' ++ "/" ++ (cl ++ ".java")
      r <- readFile file
      let dummyVars  = generateDBMFile cl jxs r
      let contracts  = genTmpFilesConst (main,cl) consts_jml dummyVars
-     rnf contracts `seq` (writeFile tmp contracts)
+     rnf contracts `seq` (writeFile file contracts)
 
 
 ---------------------------------------------
@@ -88,12 +84,12 @@ annotateTmpFiles i output_add jpath jxs consts_jml =
 
 genTmpFilesConst :: (String, ClassInfo) -> HTjml -> String -> String
 genTmpFilesConst (main, cl) [] r     = r
-genTmpFilesConst (main, cl) (x:xs) r = 
+genTmpFilesConst (main, cl) (x:xs) r =
  let mn  = x ^. _1
      cl' = x ^. _2
      ov  = x ^. _3
      jml = x ^. _4
- in do if (cl == cl') 
+ in do if (cl == cl')
        then do let (ys, zs) = if (mn == cl)
                               then lookForConstructorDef mn (lines r)
                               else lookForMethodDef mn ov (lines r)
@@ -104,12 +100,12 @@ genTmpFilesConst (main, cl) (x:xs) r =
 
 lookForMethodDef :: MethodName -> Overriding -> [String] -> ([String], [String])
 lookForMethodDef mn _ []        = error $ "Something went wrong when annotating the method " ++ mn ++ ".\n"
-lookForMethodDef mn ov (xs:xss) = 
+lookForMethodDef mn ov (xs:xss) =
  let ys = splitOnIdentifier mn xs
  in if (length ys == 1)
     then (xs:a, b) --method name does not appear in the line
-    else let zs     = (clean.head.tail) ys 
-             beginl = (words.head) ys 
+    else let zs     = (clean.head.tail) ys
+             beginl = (words.head) ys
          in if ((head zs) == '(')
             then if (length beginl == 1)
                  then (xs:a, b) --not a method definition (does not have modifier or type)
@@ -129,18 +125,18 @@ checkArguments OverNil _      = True
 checkArguments (Over []) [[]] = True
 checkArguments (Over []) _    = False
 checkArguments (Over ts) [[]] = False
-checkArguments (Over ts) ts'  =  
+checkArguments (Over ts) ts'  =
  let types = map (head.words) ts'
  in ts == types
 
 lookForConstructorDef :: MethodName -> [String] -> ([String], [String])
 lookForConstructorDef mn []       = error $ "Something went wrong when checking the constructor " ++ mn ++ ".\n"
-lookForConstructorDef mn (xs:xss) = 
+lookForConstructorDef mn (xs:xss) =
  let ys = splitOnIdentifier mn xs
  in if (length ys <= 1 || length ys > 2)
     then (xs:a, b)
-    else let zs     = (clean.head.tail) ys 
-             beginl = (clean.head) ys 
+    else let zs     = (clean.head.tail) ys
+             beginl = (clean.head) ys
          in if (null beginl || elem beginl javaModifiers)
             then if ((head zs) == '(')
                  then ([], xs:xss)
@@ -153,7 +149,7 @@ lookForConstructorDef mn (xs:xss) =
 -------------------------------------------
 
 updateSpecPublic :: String -> [(String, ClassInfo, JavaFilesInfo)] -> String -> String
-updateSpecPublic cl jinfo r = 
+updateSpecPublic cl jinfo r =
  let varsc    = getListOfTypesAndVars cl jinfo
      methodsc = getListOfTypesAndMethods cl jinfo
      (ys, zs) = lookForClassBeginning cl (lines r)
@@ -161,7 +157,7 @@ updateSpecPublic cl jinfo r =
 
 searchAndAnnotateVarsSP :: [String] -> [(String, String, String)] -> [String]
 searchAndAnnotateVarsSP xss []     = xss
-searchAndAnnotateVarsSP xss (ys:yss) = 
+searchAndAnnotateVarsSP xss (ys:yss) =
  if not (ys ^._1 == "private")
  then searchAndAnnotateVarsSP xss yss
  else let xss' = annotateSpecPublic ys xss
@@ -169,7 +165,7 @@ searchAndAnnotateVarsSP xss (ys:yss) =
 
 annotateSpecPublic :: (String,String, String) -> [String] -> [String]
 annotateSpecPublic (mod,t,v) []       = []
-annotateSpecPublic (mod,t,v) (xs:xss) = 
+annotateSpecPublic (mod,t,v) (xs:xss) =
  let ident = t ++ " " ++ v
      ys    = splitOnIdentifier ident xs
  in if (length ys == 1)
@@ -179,7 +175,7 @@ annotateSpecPublic (mod,t,v) (xs:xss) =
 
 searchAndAnnotateMethods :: [String] -> [(String, String, String)] -> [String]
 searchAndAnnotateMethods xss []     = xss
-searchAndAnnotateMethods xss (ys:yss) = 
+searchAndAnnotateMethods xss (ys:yss) =
  if not (ys ^._3 == "private")
  then searchAndAnnotateMethods xss yss
  else let xss' = annotateSpecPublicM ys xss
@@ -187,7 +183,7 @@ searchAndAnnotateMethods xss (ys:yss) =
 
 annotateSpecPublicM :: (String,String, String) -> [String] -> [String]
 annotateSpecPublicM (t,v,mod) []       = []
-annotateSpecPublicM (t,v,mod) (xs:xss) = 
+annotateSpecPublicM (t,v,mod) (xs:xss) =
  let ident = t ++ " " ++ v
      ys    = splitOnIdentifier ident xs
  in if (length ys == 1)
@@ -207,7 +203,7 @@ updateTmpFileCInv cl jinfo r =
 
 searchAndAnnotateVars :: [String] -> [(String, String, String)] -> [String]
 searchAndAnnotateVars xss []               = xss
-searchAndAnnotateVars xss ((mods,t,v):yss) = 
+searchAndAnnotateVars xss ((mods,t,v):yss) =
  if (elem t primitiveJavaTypes)
  then searchAndAnnotateVars xss yss
  else let xss' = annotateNullable (t,v) xss
@@ -216,7 +212,7 @@ searchAndAnnotateVars xss ((mods,t,v):yss) =
 --TODO: This method may need to be upgraded
 annotateNullable :: (String, String) -> [String] -> [String]
 annotateNullable (t, v) []       = []
-annotateNullable (t, v) (xs:xss) = 
+annotateNullable (t, v) (xs:xss) =
  let ident = t ++ " " ++ v
      ys    = splitOnIdentifier ident xs
  in if (length ys == 1)
@@ -232,10 +228,10 @@ annotateNullable (t, v) (xs:xss) =
 splitCInvariants :: CInvariants -> [(Class, CInvariants)] -> [(Class, CInvariants)]
 splitCInvariants [] acum           = acum
 splitCInvariants (cinv:cinvs) acum = splitCInvariants cinvs (updateAcum cinv acum)
- 
+
 updateAcum :: CInvariant -> [(Class, CInvariants)] -> [(Class, CInvariants)]
 updateAcum cinv@(CI class' body) []               = [(class', [cinv])]
-updateAcum cinv@(CI class' body) ((cl, cinvs):as) = 
+updateAcum cinv@(CI class' body) ((cl, cinvs):as) =
  if (class' == cl)
  then (cl, cinv:cinvs):as
  else (cl,cinvs):updateAcum cinv as
@@ -244,7 +240,7 @@ generateTmpFileCInv :: String -> [(Class, CInvariants)] -> String -> String
 generateTmpFileCInv cl xs r =
  let cinvs_jml = getCInvariants $ getCInvs' xs cl
      (ys, zs)  = lookForClassBeginning cl (lines r)
- in (unlines ys) ++ cinvs_jml ++ (unlines zs) 
+ in (unlines ys) ++ cinvs_jml ++ (unlines zs)
 
 lookForClassBeginning :: ClassInfo -> [String] -> ([String], [String])
 lookForClassBeginning c []       = error $  "Something went wrong when checking a class invariant for the class " ++ c  ++ ".\n"
@@ -253,14 +249,14 @@ lookForClassBeginning c (xs:xss) = let ys = splitOnIdentifier ("class " ++ c) xs
                                       then (xs:a, b)
                                       else let (ts,zs) = splitAtIdentifier '{' $ (head.tail) ys
                                            in if (null zs)
-                                              then splitOpeningBracket (xs:xss)                                                   
+                                              then splitOpeningBracket (xs:xss)
                                               else ([xs], xss)
                                            where (a, b) = lookForClassBeginning c xss
 
 
 splitOpeningBracket :: [String] -> ([String],[String])
 splitOpeningBracket []       = ([],[])
-splitOpeningBracket (xs:xss) = 
+splitOpeningBracket (xs:xss) =
  let ys = splitOnIdentifier "{" xs
  in if (length ys == 1)
     then (xs:a,b)
@@ -281,7 +277,7 @@ generateDBMFile :: String -> [(ClassInfo, [HTName])] -> String -> String
 generateDBMFile cl xs r =
  let dummy_vars = map genDummyVarJava $ lookForConstsNames cl xs
      (ys, zs)   = lookForClassBeginning cl (lines r)
- in (unlines ys) ++ concat dummy_vars ++ (unlines zs) 
+ in (unlines ys) ++ concat dummy_vars ++ (unlines zs)
 
 
 genDummyVarJava :: HTName -> String
@@ -291,7 +287,7 @@ lookForConstsNames :: ClassInfo -> [(ClassInfo, [HTName])] -> [HTName]
 lookForConstsNames cn []             = []
 lookForConstsNames cn ((cn', cs):xs) = if (cn == cn')
                                        then cs
-                                       else lookForConstsNames cn xs 
+                                       else lookForConstsNames cn xs
 
 splitClassHT :: HTriples -> [(ClassInfo, HTName)]
 splitClassHT []     = []
@@ -299,7 +295,7 @@ splitClassHT (c:cs) = (_methodCN c ^. clinf, c ^. htName) : splitClassHT cs
 
 joinClassHT :: [(ClassInfo, HTName)] -> [(ClassInfo, [HTName])] -> [(ClassInfo, [HTName])]
 joinClassHT [] jcc     = jcc
-joinClassHT (x:xs) jcc = joinClassHT xs (updateJCC x jcc) 
+joinClassHT (x:xs) jcc = joinClassHT xs (updateJCC x jcc)
 
 updateJCC :: (ClassInfo, HTName) -> [(ClassInfo, [HTName])] -> [(ClassInfo, [HTName])]
 updateJCC (cn, c) []            = [(cn, [c])]
