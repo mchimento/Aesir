@@ -100,7 +100,7 @@ makeNodes node trs ((p,ht,tr):xs) = makeNodesEP node trs ht tr 0 (executionPath 
 makeNodesEP :: BRT -> [TriggersInfo] -> HT -> Transition -> Int -> [EPath] -> [BRT]
 makeNodesEP _ _ _ _ _ []              = []
 makeNodesEP node trs ht tr n (ep:eps) =
-  if (verified ep) == "true"
+  if (verified ep) == "false"
   then makeNodesEP node trs ht tr n eps
   else BRT (Just node) [] (node^.initial) (fromState tr) (makeCond ep) (makeMethod trs tr) (_iter node) (ht^.htName ++ show n)
        : makeNodesEP node trs ht tr (n+1) eps
@@ -108,12 +108,12 @@ makeNodesEP node trs ht tr n (ep:eps) =
 makeCond :: EPath -> JMLExp
 makeCond ep = removeDLstrContent $ addParenthesisNot $ removeSelf $ pathCondition ep
 
-makeMethod :: [TriggersInfo] -> Transition -> Maybe (Trigger, [Bind])
+makeMethod :: [TriggersInfo] -> Transition -> Maybe (MethodName, [Bind], ClassInfo)
 makeMethod trs t =
   let tr   = trigger $ arrow t in
   case getTrInfo tr trs of
     Nothing   -> Nothing
-    Just tinf -> Just (tiTN tinf,tiBinds tinf)
+    Just tinf -> Just (tiMN tinf,tiBinds tinf,tiCI tinf)
 
 ---------------------------------
 -- Adds names to Hoare triples --

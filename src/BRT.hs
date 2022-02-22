@@ -15,7 +15,7 @@ data BRT = BRT
  , _initial   :: NameState --Initial state of the model
  , _current   :: NameState --Current (analysed) state
  , _prop      :: JMLExp    --FOL formula in root, or backtracked condition
- , _method    :: Maybe (Trigger, [Bind])--(method_executed_to_reach_parent,methods_arguments)
+ , _method    :: Maybe (MethodName, [Bind],ClassInfo)--(method_executed_to_reach_parent,methods_arguments,class_type)
  , _iter      :: Integer --allowed amount of iterations for the loops
  , _idBrt     :: String --Node identifier
  } | BNil deriving (Eq,Read,Show)
