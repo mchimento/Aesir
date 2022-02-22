@@ -1,4 +1,4 @@
-module JML.JMLInjection(injectJMLinitial,injectJMLannotations) where
+module JML.JMLInjection(injectJMLinitial,injectJMLannotations,setDummyVarsFalse) where
 
 import Types
 import JML.JMLGenerator
@@ -11,6 +11,7 @@ import Java.JavaLanguage
 import System.IO
 import Control.DeepSeq
 import Control.Lens hiding(Context,pre)
+import Data.List
 
 ---------------------------------------
 -- Injecting Initial JML annotations --
@@ -275,13 +276,13 @@ getCInvs' ((cl', cinvs):xs) cl = if (cl' == cl)
 
 generateDBMFile :: String -> [(ClassInfo, [HTName])] -> String -> String
 generateDBMFile cl xs r =
- let dummy_vars = map genDummyVarJava $ lookForConstsNames cl xs
+ let dummy_vars = map (genDummyVarJava "true") $ lookForConstsNames cl xs
      (ys, zs)   = lookForClassBeginning cl (lines r)
  in (unlines ys) ++ concat dummy_vars ++ (unlines zs)
 
 
-genDummyVarJava :: HTName -> String
-genDummyVarJava cn = "  public static final boolean " ++ cn ++ " = true;\n"
+genDummyVarJava :: String -> HTName -> String
+genDummyVarJava t cn = "  public static final boolean " ++ cn ++ " = " ++ t ++ ";"
 
 lookForConstsNames :: ClassInfo -> [(ClassInfo, [HTName])] -> [HTName]
 lookForConstsNames cn []             = []
@@ -302,3 +303,37 @@ updateJCC (cn, c) []            = [(cn, [c])]
 updateJCC (cn, c) ((cn',cs):xs) = if (cn == cn')
                                   then (cn', c:cs) : xs
                                   else (cn', cs):updateJCC (cn, c) xs
+
+------------------------------------------------------------
+-- Set dummy variables to false                           --
+-- (to prevent multiple checks of the same Hoarte triple) --
+------------------------------------------------------------
+
+setDummyVarsFalse :: UpgradeModel CModel -> FilePath -> HTriples -> IO [()]
+setDummyVarsFalse cm output_add hts =
+ do let (model, env)  = fromOK $ runStateT cm emptyEnv
+    let imports       = model ^. importsGet
+    let imports'      = [i | i <- imports,not (elem ((\ (Import s) -> s) i) importsInKeY)]
+    sequence $ map (\ i -> setDummyVarFalse i output_add hts) imports'
+
+setDummyVarFalse :: Import -> FilePath -> HTriples -> IO ()
+setDummyVarFalse i output_add hts  =
+  do (main, cl) <- makeAddFile i
+     let output_add' = output_add ++ "/" ++ main
+     let file        = output_add' ++ "/" ++ (cl ++ ".java")
+     r <- readFile file
+     let vars = [ ht^.htName | ht <- hts, (_clinf (_methodCN ht)) == cl ]
+     let (ys, zs) = lookForClassBeginning cl (lines r)
+     let content  = (unlines ys) ++ (unlines (setFalseHT vars zs))
+     rnf content `seq` (writeFile file content)
+
+setFalseHT :: [HTName] -> [String] -> [String]
+setFalseHT [] xss     = xss
+setFalseHT (y:ys) xss = setFalseHT ys (setFalse y xss)
+
+setFalse :: HTName -> [String] -> [String]
+setFalse name []     = []
+setFalse name (x:xs) =
+ if isInfixOf (genDummyVarJava "true" name) x
+ then genDummyVarJava "false" name:xs
+ else x:setFalse name xs

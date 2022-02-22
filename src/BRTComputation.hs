@@ -3,7 +3,7 @@
 module BRTComputation where
 
 import qualified Data.Map.Strict as Map
-import Control.Lens
+import Control.Lens hiding(children)
 import System.Exit
 import System.Environment
 import System.Process
@@ -15,6 +15,8 @@ import UpgradeAesir
 import CommonFunctions
 import BRT
 import JML.JMLInjection
+import ParserXMLKeYOut
+import DL2JML
 
 ---------------------------------------------
 -- Backwards reachability tree computation --
@@ -40,18 +42,78 @@ computeBRT cm mp iter st jpath out_add =
 --TODO: Cannot handle different methods with the same names, i.e., methods overriding
 brt :: UpgradeModel CModel -> BRT -> Map.Map NameState Transitions -> Integer ->
        [TriggersInfo] -> FilePath -> IO BRT
-brt cm t mp iter trs out_add =
- do let ts = Map.lookup (t ^. current) mp
-    if isJust ts
-    then do let toAnalyse_add = out_add ++ "workspace/files2analyse"
-            let hts = nameHTS 0 (t ^. idBrt) $ map (mkHT (t ^. prop) trs) $ fromJust ts
-            injectJMLannotations cm toAnalyse_add hts
-            runKeY toAnalyse_add (out_add++"workspace/")
-            putStrLn "Backwards reachability tree computation... [DONE]"
-            return t
-         else do putStrLn $ "Aesir: Error when computing reachability for the state "
-                            ++ show (t ^. current) ++ "."
-                 return BNil
+brt cm node rt iter trs out_add =
+ do let reachable = Map.lookup (node ^. current) rt
+    if isJust reachable
+    then do child  <- brt_iter cm node trs (fromJust reachable) out_add
+            child' <- sequence $ map (\t -> brt cm t rt iter trs out_add) child
+            return $ (children .~ child' $ node)
+    else do putStrLn $ "Aesir: Error when computing reachability for the state "
+                       ++ show (node ^. current) ++ "."
+            return BNil
+
+--Computes the children of a BRT
+brt_iter :: UpgradeModel CModel -> BRT -> [TriggersInfo] -> [Transition] -> FilePath -> IO [BRT]
+brt_iter cm _ trs [] out_add    = return []
+brt_iter cm node trs ts out_add =
+  do let toAnalyse_add = out_add ++ "workspace/files2analyse"
+     let hinfo         = htInfo trs node ts
+     let hts           = map fst hinfo
+     injectJMLannotations cm toAnalyse_add hts
+     runKeY toAnalyse_add (out_add++"workspace/")
+     setDummyVarsFalse cm toAnalyse_add hts
+     nodes <- newNodes node (out_add++"workspace/") hinfo trs
+     return nodes
+
+newNodes :: BRT -> FilePath -> [(HT,Transition)] -> [TriggersInfo] -> IO [BRT]
+newNodes node out_add hinfo trs =
+  do let file = out_add ++ "out.xml"
+     r <- readFile file
+     let xml   = ParserXMLKeYOut.parse r
+     let xml'  = removeNoneHTs xml (map ((^.htName).fst) hinfo)
+     let child = makeNodes node trs (pairingProofHT xml' hinfo)
+     return child
+
+htInfo :: [TriggersInfo] -> BRT -> [Transition] -> [(HT,Transition)]
+htInfo trs node ts =
+ let hts = map (mkHT (node ^. prop) trs) ts
+ in zip (nameHTS 0 (node ^. idBrt) hts) ts
+
+pairingProofHT :: [Proof] -> [(HT,Transition)] -> [(Proof,HT,Transition)]
+pairingProofHT [] _       = []
+pairingProofHT (p:ps) cns =
+ getHTforProof p cns : pairingProofHT ps cns
+
+getHTforProof :: Proof -> [(HT,Transition)] -> (Proof,HT,Transition)
+getHTforProof _ []          = undefined
+getHTforProof p ((ht,t):ts) =
+  let cn   = getHTNameErrConst (contractText p) (typee p) in
+  let name = ht^.htName
+  in if ((cn /= "") && cn == name)
+     then (p,ht,t)
+     else getHTforProof p ts
+
+makeNodes :: BRT -> [TriggersInfo] -> [(Proof,HT,Transition)] -> [BRT]
+makeNodes _ _ []                  = []
+makeNodes node trs ((p,ht,tr):xs) = makeNodesEP node trs ht tr 0 (executionPath p) ++ makeNodes node trs xs
+
+makeNodesEP :: BRT -> [TriggersInfo] -> HT -> Transition -> Int -> [EPath] -> [BRT]
+makeNodesEP _ _ _ _ _ []              = []
+makeNodesEP node trs ht tr n (ep:eps) =
+  if (verified ep) == "true"
+  then makeNodesEP node trs ht tr n eps
+  else BRT (Just node) [] (node^.initial) (fromState tr) (makeCond ep) (makeMethod trs tr) (_iter node) (ht^.htName ++ show n)
+       : makeNodesEP node trs ht tr (n+1) eps
+
+makeCond :: EPath -> JMLExp
+makeCond ep = removeDLstrContent $ addParenthesisNot $ removeSelf $ pathCondition ep
+
+makeMethod :: [TriggersInfo] -> Transition -> Maybe (Trigger, [Bind])
+makeMethod trs t =
+  let tr   = trigger $ arrow t in
+  case getTrInfo tr trs of
+    Nothing   -> Nothing
+    Just tinf -> Just (tiTN tinf,tiBinds tinf)
 
 ---------------------------------
 -- Adds names to Hoare triples --
