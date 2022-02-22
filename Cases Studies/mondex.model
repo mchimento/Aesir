@@ -14,9 +14,9 @@ short pvalue;
 }
 
 TRIGGERS {
-start_from_operation (Messages m, short ret) = {ConPurse sender.start_from_operation(m)exit(ret)}
-req_operation (Messages m, short ret) = {ConPurse sender.req_operation(m)exit(ret)}
-ack_operation (Messages m, short ret) = {ConPurse sender.ack_operation(m)exit(ret)}
+start_from_operation (Messages m_sf, short ret) = {ConPurse sender.start_from_operation(m_sf)exit(ret)}
+req_operation (Messages m_r, short ret) = {ConPurse sender.req_operation(m_r)exit(ret)}
+ack_operation (Messages m_a, short ret) = {ConPurse sender.ack_operation(m_a)exit(ret)}
 }
 
 
@@ -33,16 +33,16 @@ NORMAL { parties_initialised ;
 
 TRANSITIONS
 {
-awaiting_from -> parties_initialised [m.label == Messages.StartFrom && m.id == sender.name && m.cpd != null
-                                      && m.cpd.name != name & logIdx < exLog.length
+awaiting_from -> parties_initialised [m_sf.label == Messages.StartFrom && m_sf.id == sender.name && m_sf.cpd != null
+                                      && m_sf.cpd.name != name & logIdx < exLog.length
                                       \ start_from_operation \ ret == SWResponses.SW_SUCCESS \ skip ;]
 
-parties_initialised -> money_deducted [ m.label == Messages.Req && m.id == sender.name
-                                        && checkSameTransaction(m) == SWResponses.SW_SUCCESS && transaction.value <= balance
+parties_initialised -> money_deducted [ m_r.label == Messages.Req && m_r.id == sender.name
+                                        && checkSameTransaction(m_r) == SWResponses.SW_SUCCESS && transaction.value <= balance
                                         \ req_operation \ ret == SWResponses.SW_SUCCESS \ skip ; ]
 
-money_deducted -> end_transaction [m.label == Messages.Ack && m.id == sender.name
-                                  && checkSameTransaction(m) == SWResponses.SW_SUCCESS
+money_deducted -> end_transaction [m_a.label == Messages.Ack && m_a.id == sender.name
+                                  && checkSameTransaction(m_a) == SWResponses.SW_SUCCESS
                                   \ ack_operation \ ret == SWResponses.SW_SUCCESS \ skip ; ]
 }
 } %%end of PROPERTY

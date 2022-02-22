@@ -196,13 +196,13 @@ public class ConPurse
   }
 
  
-  private short start_from_operation(Messages m)
+  private short start_from_operation(Messages m_sf)
   {    
     if (status == ProtocolStatus.Idle)
     { 
       if (logIdx >= exLog.length) return SWResponses.SW_LOG_FULL;
       
-      short aux = readCounterPartDetails(m);
+      short aux = readCounterPartDetails(m_sf);
       if (aux == SWResponses.SW_SUCCESS){
          if (nextSeq < ShortMaxValue)
             nextSeq = (short) (nextSeq + 1);
@@ -239,11 +239,11 @@ public class ConPurse
     else return SWResponses.SW_IGNORED;
   }
   
-  private short req_operation(Messages m)
+  private short req_operation(Messages m_r)
   {
     if (status == ProtocolStatus.Epr)
     {
-      short aux = checkSameTransaction(m);
+      short aux = checkSameTransaction(m_r);
       if (aux == SWResponses.SW_SUCCESS) {
          balance = (short)(balance - transaction.value);
          status = ProtocolStatus.Epa;         
@@ -274,11 +274,11 @@ public class ConPurse
   }
 
 
-  private short ack_operation(Messages m)
+  private short ack_operation(Messages m_a)
   {
     if (status == ProtocolStatus.Epa)
     {
-      short aux = checkSameTransaction(m);
+      short aux = checkSameTransaction(m_a);
       
       if (aux == SWResponses.SW_SUCCESS) {
          status = ProtocolStatus.Endf;
