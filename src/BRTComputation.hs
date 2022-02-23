@@ -28,11 +28,13 @@ computeBRT cm mp iter st jpath out_add =
     let model   = getValue cm
     let trs     = allTriggers $ getEnvVal cm
     let initial = (head $ getStarting $ pStates (model ^. modelGet ^. ctxtGet ^. property)) ^. getNS
-    let root    = BRT Nothing [] initial st (getJMLEprop $ model ^. initpropGet) Nothing iter (getIdIprop $ model ^. initpropGet)
-    createDirectoryIfMissing False toAnalyse_add
-    copyFiles jpath toAnalyse_add
-    injectJMLinitial cm toAnalyse_add
-    brt cm root mp iter trs out_add
+    let root = BRT Nothing [] initial st (getJMLEprop $ model ^. initpropGet) Nothing iter (getIdIprop $ model ^. initpropGet)
+    if initial == st
+    then return root
+    else do createDirectoryIfMissing False toAnalyse_add
+            copyFiles jpath toAnalyse_add
+            injectJMLinitial cm toAnalyse_add
+            brt cm root mp iter trs out_add
 
 --------------------------------------------------------
 -- Backwards reachability tree computation iterations --
