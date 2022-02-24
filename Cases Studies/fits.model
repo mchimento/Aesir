@@ -1,133 +1,36 @@
 IMPORTS {
-import main.CMachine;
-import java.util.Collection;
+import transactionsystem.UserInfo ;
 }
 
-GLOBAL {
-
-VARIABLES {
- int tmp = 0;
-}
+MODEL {
 
 TRIGGERS {
-brew_entry() = {CMachine cm.brew()entry}
-brew_exit(CMachine cm) = {cm.brew()exit()}
-cleanF_entry(CMachine cm) = {cm.cleanF()entry}
-cleanF_exit() = {CMachine cm.cleanF()exit()}
-foo_exit(String ret,String s) = {CMachine cm.foo(s)exit(ret)} 
+openSession() = {UserInfo u.openSession()}
+closeSession(int sid) = {UserInfo u.closeSession(sid)}
+depositTo(String account_number, int amount) = {UserInfo u.depositTo(account_number,amount)}
+withdrawFrom(String account_number, int amount) = {UserInfo u.withdrawFrom(account_number,amount)}
 }
  
-PROPERTY prop1 {
+PROPERTY fits_session {
 
-STATES
-{
-STARTING { q (brew_ok,brew_ok1,clean_filter_ok) ; }
-BAD { bad ; }
-NORMAL { q2 (brew_error,clean_filter_error) ;}
+STATES {
+STARTING { logout ; }
+NORMAL { login (init) ; }
 }
 
-TRANSITIONS
-{
-q -> q2 [brew_entry \ cm.cups < cm.limit  \ tmp=add(tmp) ; \log("The value of tmp is: %d",tmp);]
-q2 -> q [brew_exit \\ \create (brew_tmp, cm, \log("Ojojoj1"), cleanF_entry,true,brew_ok,brew) ;]
-q2 -> bad [ brew_entry ]
-q2 -> bad [ cleanF_entry ]
-}
+TRANSITIONS {
+logout -> login [ amount > 0 \ openSession \ true \ skip ; ]
+login -> logout [ true \ closeSession \ true \ skip ; ]
+login -> login  [ amount > 0 \ depositTo \ true \ skip ; ]
+login -> login  [ amount > 0 \ withdrawFrom \ true \ skip ; ]
 }
 
-PROPERTY prop2 {
+} %%end of PROPERTY
 
-STATES
-{
-STARTING { q (brew_ok,brew_ok1,clean_filter_ok) ; }
-BAD { bad ; }
-NORMAL { q2 (brew_error,clean_filter_error) ;}
+} %% end of MODEL
+
+CINVARIANTS {
+ UserInfo { (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) }
 }
 
-TRANSITIONS
-{
-q -> q2 [brew_entry \ cm.cups < cm.limit  \ tmp=add(tmp) ; \log("The value of tmp is: %d",tmp);]
-q2 -> q [brew_exit \\ \create (brew_tmp, cm, \log("Ojojoj2"), cleanF_entry,true,brew_ok,brew) ;]
-q2 -> bad [ brew_entry ]
-q2 -> bad [ cleanF_entry ]
-}
-}
-
-}
-
-TEMPLATES {
- TEMPLATE brew_tmp (CMachine cmt,Action a,Trigger tr,Condition c,HTriple h,MethodName mn) {
-    TRIGGERS {
-       brew_entry2() = {cmt.brew()entry}
-       brew_exit2()  = {cmt.mn()exit()}
-    }
-    PROPERTY prop1_tmp {
-       STATES {
-          STARTING { q (h) ; }
-          BAD { bad ; }
-          NORMAL { q2 ;}
-       }
-       TRANSITIONS {
-           q -> q2 [brew_entry2 ]
-           q2 -> q [tr \ \ a ;]
-           q2 -> bad [ brew_entry2 \ c ]
-           q2 -> bad [ tr ]
-       }
-    }
- }
-}
-
-HTRIPLES {
-
-HT brew_ok
-{
-PRE {cups < limit}
-METHOD {CMachine.brew()}
-POST {cups == \old(cups+1)}
-ASSIGNABLE {cups}
-}
-
-HT brew_ok1
-{
-PRE {true}
-METHOD {CMachine.brew(int)}
-POST {false}
-ASSIGNABLE {\nothing}
-}
-
-HT brew_error
-{
-PRE {cups < limit}
-METHOD {CMachine.brew()}
-POST {cups == \old(cups)}
-ASSIGNABLE {cups}
-}
-
-HT clean_filter_ok
-{
-PRE {true}
-METHOD {CMachine.cleanF}
-POST {cups == 0}
-ASSIGNABLE {cups}
-}
-
-HT clean_filter_error
-{
-PRE {true}
-METHOD {CMachine.cleanF}
-POST {cups == \old(cups)}
-ASSIGNABLE {cups}
-}
-
-}
-
-METHODS {
- int add(int n) {
-    int i = 0;
-
-    while (i < 10)
-    { i++ ;} 
-
-    return i ;
- }
-}
+INITPROP init { (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) }

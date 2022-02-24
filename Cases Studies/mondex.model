@@ -6,13 +6,6 @@ import main.SWResponses;
 
 MODEL {
 
-VARIABLES
-{
-ConPurse pfrom;
-ConPurse pto;
-short pvalue;
-}
-
 TRIGGERS {
 start_from_operation (Messages m_sf, short ret) = {ConPurse sender.start_from_operation(m_sf)exit(ret)}
 req_operation (Messages m_r, short ret) = {ConPurse sender.req_operation(m_r)exit(ret)}
