@@ -139,7 +139,8 @@ makeNodesEP node trs ht tr n (ep:eps) =
   if (verified ep) == "false"
   then makeNodesEP node trs ht tr n eps
   else BRT (Just node) [] (node^.initial) (fromState tr) (makeCond ep) (makeMethod trs tr)
-           (_iter node) (ht^.htName ++ show n) (fromState tr:(node ^. visited)) (makeLoop node (fromState tr)) (fromState tr:(node ^. path))
+           (_iter node) (ht^.htName ++ show n) (fromState tr:(node ^. visited))
+           (makeLoop node (fromState tr)) (fromState tr:(node ^. path))
        : makeNodesEP node trs ht tr (n+1) eps
 
 makeLoop :: BRT -> NameState -> Map.Map Loop Integer
@@ -160,12 +161,17 @@ updLoop node nm =
 makeCond :: EPath -> JMLExp
 makeCond ep = removeDLstrContent $ addParenthesisNot $ removeSelf $ pathCondition ep
 
+--TODO:When model variables can be handled replace 'ys' by 'tiBinds tinf'
 makeMethod :: [TriggersInfo] -> Transition -> Maybe (MethodName, [Bind], ClassInfo)
 makeMethod trs t =
   let tr   = trigger $ arrow t in
   case getTrInfo tr trs of
     Nothing   -> Nothing
-    Just tinf -> Just (tiMN tinf,tiBinds tinf,tiCI tinf)
+    Just tinf -> case tiTrvar tinf of
+                   EVExit xs -> let zs = map getIdBind xs in
+                                let ys = [ y | y <- tiBinds tinf, not (elem (getIdBind y) zs) ]
+                                in Just (tiMN tinf,ys,tiCI tinf)
+                   _         -> Just (tiMN tinf,tiBinds tinf,tiCI tinf)
 
 ---------------------------------
 -- Adds names to Hoare triples --

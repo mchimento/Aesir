@@ -14,7 +14,7 @@ tcInference t =
   else do putStrLn "Trace condition inference... \n"
           let ret = seq2TraceConds $ flattenBRT t
           putStrLn $ "Amount of trace conditions generated: " ++ show (length ret)
-          putStrLn (show ret)
+          showAllTraces ret
           putStrLn "Trace condition inference... [DONE]\n"
 
 flattenBRT :: BRT -> [[(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]]
@@ -47,3 +47,9 @@ seq2TraceCond xs =
   let trace = map (\(_,_,z) -> z) $ init xs in
   let phi   = (\(_,x,_) -> x) si
   in TC phi trace
+
+showAllTraces :: TraceConditions -> IO ()
+showAllTraces []     = putStrLn ""
+showAllTraces (x:xs) =
+ do putStrLn (show x)
+    showAllTraces xs
