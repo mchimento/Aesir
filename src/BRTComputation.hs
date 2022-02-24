@@ -28,7 +28,8 @@ computeBRT cm mp iter st jpath out_add =
     let model   = getValue cm
     let trs     = allTriggers $ getEnvVal cm
     let initial = (head $ getStarting $ pStates (model ^. modelGet ^. ctxtGet ^. property)) ^. getNS
-    let root = BRT Nothing [] initial st (getJMLEprop $ model ^. initpropGet) Nothing iter (getIdIprop $ model ^. initpropGet)
+    let root = BRT Nothing [] initial st (getJMLEprop $ model ^. initpropGet)
+                   Nothing iter (getIdIprop $ model ^. initpropGet) [] Map.empty []
     if initial == st
     then return root
     else do createDirectoryIfMissing False toAnalyse_add
@@ -45,9 +46,10 @@ computeBRT cm mp iter st jpath out_add =
 brt :: UpgradeModel CModel -> BRT -> Map.Map NameState Transitions -> Integer ->
        [TriggersInfo] -> FilePath -> IO BRT
 brt cm node rt iter trs out_add =
- do let reachable = Map.lookup (node ^. current) rt
-    if isJust reachable
-    then do child  <- brt_iter cm node trs (fromJust reachable) out_add
+ do let candidates = Map.lookup (node ^. current) rt
+    if isJust candidates
+    then do let reachable = filterNodes node (fromJust candidates)
+            child  <- brt_iter cm node trs reachable out_add
             child' <- sequence $ map (\t -> brt cm t rt iter trs out_add) child
             return $ (children .~ child' $ node)
     else do putStrLn $ "Aesir: Error when computing reachability for the state "
@@ -67,6 +69,38 @@ brt_iter cm node trs ts out_add =
      nodes <- newNodes node (out_add++"workspace/") hinfo trs
      return nodes
 
+--Filter transitions which would violate the allowed amount of loop iterations
+filterNodes :: BRT -> Transitions -> Transitions
+filterNodes node []       = []
+filterNodes node (tr:trs) =
+ let si = fromState tr in
+ let vs = node ^. visited
+ in if (elem si vs)
+    then let p = node ^. path
+         in if checkLoop node si
+            then filterNodes node trs
+            else tr : filterNodes node trs
+    else tr : filterNodes node trs
+
+--Check if the allowed amount of loop iterations is violated
+checkLoop :: BRT -> NameState -> Bool
+checkLoop node nm =
+  let (xs,ys) = splitAtState nm (node ^. path) in
+  let ps = concat (nm:xs) in
+  let mp = node ^. loops
+  in case Map.lookup ps mp of
+        Nothing -> False
+        Just n  -> (_iter node) < (n+1)
+
+splitAtState :: NameState -> [NameState] -> ([NameState],[NameState])
+splitAtState _ []     = ([],[])
+splitAtState s (x:xs) =
+  if s == x
+  then ([x],xs)
+  else let (ys,zs) = splitAtState s xs
+       in (x:ys,zs)
+
+--Creates to new nodes to add to the computed BRT
 newNodes :: BRT -> FilePath -> [(HT,Transition)] -> [TriggersInfo] -> IO [BRT]
 newNodes node out_add hinfo trs =
   do let file = out_add ++ "out.xml"
@@ -104,8 +138,24 @@ makeNodesEP _ _ _ _ _ []              = []
 makeNodesEP node trs ht tr n (ep:eps) =
   if (verified ep) == "false"
   then makeNodesEP node trs ht tr n eps
-  else BRT (Just node) [] (node^.initial) (fromState tr) (makeCond ep) (makeMethod trs tr) (_iter node) (ht^.htName ++ show n)
+  else BRT (Just node) [] (node^.initial) (fromState tr) (makeCond ep) (makeMethod trs tr)
+           (_iter node) (ht^.htName ++ show n) (fromState tr:(node ^. visited)) (makeLoop node (fromState tr)) (fromState tr:(node ^. path))
        : makeNodesEP node trs ht tr (n+1) eps
+
+makeLoop :: BRT -> NameState -> Map.Map Loop Integer
+makeLoop node nm =
+  if elem nm (node ^. visited)
+  then updLoop node nm
+  else node ^. loops
+
+updLoop :: BRT -> NameState -> Map.Map Loop Integer
+updLoop node nm =
+  let (xs,ys) = splitAtState nm (node ^. path) in
+  let ps = concat (nm:xs) in
+  let mp = node ^. loops
+  in case Map.lookup ps mp of
+       Nothing -> Map.insert ps 1 mp
+       Just n  -> Map.insert ps (n+1) mp
 
 makeCond :: EPath -> JMLExp
 makeCond ep = removeDLstrContent $ addParenthesisNot $ removeSelf $ pathCondition ep

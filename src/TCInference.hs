@@ -8,10 +8,14 @@ tcInference :: BRT -> IO ()
 tcInference t =
   if null (t ^. children)
   then do putStrLn "Trace condition inference... \n"
+          putStrLn "Amount of trace conditions generated: 1"
           putStrLn (show (TC "true" []))
           putStrLn "Trace condition inference... [DONE]\n"
-  else do putStrLn "Trace condition inference... [DONE]\n"
-          putStrLn (show (seq2TraceConds $ flattenBRT t))
+  else do putStrLn "Trace condition inference... \n"
+          let ret = seq2TraceConds $ flattenBRT t
+          putStrLn $ "Amount of trace conditions generated: " ++ show (length ret)
+          putStrLn (show ret)
+          putStrLn "Trace condition inference... [DONE]\n"
 
 flattenBRT :: BRT -> [[(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]]
 flattenBRT brt =
