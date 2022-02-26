@@ -28,15 +28,15 @@ TRANSITIONS
 {
 awaiting_from -> parties_initialised [m_sf.label == Messages.StartFrom && m_sf.id == sender.name && m_sf.cpd != null
                                       && m_sf.cpd.name != name & logIdx < exLog.length
-                                      \ start_from_operation \ ret == SWResponses.SW_SUCCESS \ skip ;]
+                                      | start_from_operation | ret == SWResponses.SW_SUCCESS | skip ;]
 
 parties_initialised -> money_deducted [ m_r.label == Messages.Req && m_r.id == sender.name
                                         && checkSameTransaction(m_r) == SWResponses.SW_SUCCESS && transaction.value <= balance
-                                        \ req_operation \ ret == SWResponses.SW_SUCCESS \ skip ; ]
+                                        | req_operation | ret == SWResponses.SW_SUCCESS | skip ; ]
 
 money_deducted -> end_transaction [m_a.label == Messages.Ack && m_a.id == sender.name
                                   && checkSameTransaction(m_a) == SWResponses.SW_SUCCESS
-                                  \ ack_operation \ ret == SWResponses.SW_SUCCESS \ skip ; ]
+                                  | ack_operation | ret == SWResponses.SW_SUCCESS | skip ; ]
 }
 } %%end of PROPERTY
 

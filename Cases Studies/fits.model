@@ -5,10 +5,10 @@ import transactionsystem.UserInfo ;
 MODEL {
 
 TRIGGERS {
-openSession() = {UserInfo u.openSession()}
-closeSession(int sid) = {UserInfo u.closeSession(sid)}
-depositTo(String account_number, int amount) = {UserInfo u.depositTo(account_number,amount)}
-withdrawFrom(String account_number, int amount) = {UserInfo u.withdrawFrom(account_number,amount)}
+openSession() = {UserInfo user.openSession()}
+closeSession(int sid) = {UserInfo user.closeSession(sid)}
+depositTo(String account_number, int amount) = {UserInfo user.depositTo(account_number,amount)}
+withdrawFrom(String account_number, int amount) = {UserInfo user.withdrawFrom(account_number,amount)}
 }
  
 PROPERTY fits_session {
@@ -19,7 +19,7 @@ NORMAL { login (init) ; }
 }
 
 TRANSITIONS {
-logout -> login [ amount > 0 \ openSession \ true \ skip ; ]
+logout -> login [ true \ openSession \ true \ skip ; ]
 login -> logout [ true \ closeSession \ true \ skip ; ]
 login -> login  [ amount > 0 \ depositTo \ true \ skip ; ]
 login -> login  [ amount > 0 \ withdrawFrom \ true \ skip ; ]

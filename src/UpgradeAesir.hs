@@ -692,7 +692,7 @@ getTransition' id env scope (Abs.Transition (Abs.NameState q1) (Abs.NameState q2
                                 , toState = getIdAbs q2
                                 }, env')
 
-getArrow :: Abs.CondExp -> Abs.Id -> Abs.CondExp -> [Abs.Action] ->
+getArrow :: Abs.JML -> Abs.Id -> Abs.JML -> [Abs.Action] ->
             Env -> Scope -> Writer String (Arrow,Env)
 getArrow pre fun post acts env scope =
  let act' = (trim.printTree) acts in

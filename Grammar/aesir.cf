@@ -139,7 +139,7 @@ Transitions. Transitions ::= "TRANSITIONS" "{" [Transition] "}" ;
 separator nonempty Transition "" ;
 
 Transition. Transition ::= 
-  NameState "->" NameState "[" CondExp "\\" Id "\\" CondExp "\\" [Action] "]" ;
+  NameState "->" NameState "[" JML "|" Id "|" JML "|" [Action] "]" ;
 
 Act. Action ::= CondExp ;
 terminator nonempty Action ";" ;
@@ -228,7 +228,7 @@ CondExpCorchete. CondExp ::= "[" CondExp "]" CondExp ;
 CondExpComma. CondExp ::= "," CondExp ;
 CondExpSlash. CondExp ::= "/" CondExp ;
 CondExpEq. CondExp ::= "=" CondExp ;
-CondExpBar. CondExp ::= "|" CondExp ;
+CondExpBar. CondExp ::= "||" CondExp ;
 CondExpNil. CondExp ::= ;
 
 VarExpId. VarExp ::= Id VarExp ;
@@ -259,7 +259,7 @@ ExpSemiColon. Expressions ::= ";" Expressions ;
 ExpBSlash. Expressions ::= "\\" Expressions ;
 ExpComma. Expressions ::= "," Expressions ;
 ExpSlash. Expressions ::= "/" Expressions ;
-ExpBar. Expressions ::= "|" Expressions ;
+ExpBar. Expressions ::= "||" Expressions ;
 ExpNil. Expressions ::= ;
 
 Java. Java ::= Expressions ;

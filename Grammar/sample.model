@@ -24,17 +24,18 @@ NORMAL { q2 (deposit_ok) ; }
 
 TRANSITIONS
 {
-q3 -> q4 [ pre == true \ foo \ true \ skip ;]
-q1 -> q2 [true \ login_exit \ f != null && f.getUser() != null \ skip ; ]
-q1 -> bad [true \ deposit_entry \ true \ skip ;]
-q2 -> q1 [true \ logout_entry \ f != null && f.getUser() != null \ skip ;]
-q2 -> q2 [true \ deposit_entry \ f == null && f.getUser() != null \ skip ;]
-q3 -> q4 [true \ foo \ true \ skip ; ]
-q3 -> q4 [true \ foo \ b \ skip ;]
-q3 -> q4 [true \ foo \ true \ skip ;]
-q3 -> q4 [foo \ b \ b2 \ act ; act ; ]
-q3 -> q4 [foo && y \ b \ b2 \ act ; ]
-q1 -> q2 [true \ login_exit \ f != null && f.getUser() != null \ skip ; skip ; ]
+q3 -> q4 [ pre == true | foo | true | skip ;]
+q1 -> q2 [true | login_exit | f != null && f.getUser() != null | skip ; ]
+q1 -> bad [true | deposit_entry | true | skip ;]
+q2 -> q1 [true | logout_entry | f != null && f.getUser() != null | skip ;]
+q2 -> q2 [true | deposit_entry | f == null && f.getUser() != null | skip ;]
+q3 -> q4 [true | foo | true | skip ; ]
+q3 -> q4 [true | foo | b | skip ;]
+q3 -> q4 [true | foo | true | skip ;]
+q3 -> q4 [foo | b | b2 | act ; act ; ]
+q3 -> q4 [foo && y | b | b2 | act ; ]
+q1 -> q2 [false || true | login_exit | f != null && f.getUser() != null | skip ; skip ; ]
+q3 -> q4 [ \forall int x ; x > 10 ; x > 10 | b | b2 | act ; ]
 }
 
 }%%end prop_deposit

@@ -1,5 +1,6 @@
-{-# LANGUAGE CPP,MagicHash #-}
-{-# LINE 3 "Lexaesir.x" #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds -fno-warn-missing-signatures #-}
+{-# LANGUAGE CPP #-}
+{-# LINE 3 "LexAesir.x" #-}
 
 {-# OPTIONS -fno-warn-incomplete-patterns #-}
 {-# OPTIONS_GHC -w #-}
@@ -9,6 +10,7 @@ module ParserModel.Lexaesir where
 
 import qualified Data.Bits
 import Data.Word (Word8)
+import Data.Char (ord)
 
 #if __GLASGOW_HASKELL__ >= 603
 #include "ghcconfig.h"
@@ -17,31 +19,3044 @@ import Data.Word (Word8)
 #endif
 #if __GLASGOW_HASKELL__ >= 503
 import Data.Array
-import Data.Char (ord)
 import Data.Array.Base (unsafeAt)
 #else
 import Array
-import Char (ord)
 #endif
-#if __GLASGOW_HASKELL__ >= 503
-import GHC.Exts
-#else
-import GlaExts
-#endif
-alex_base :: AlexAddr
-alex_base = AlexA# "\xf8\xff\xff\xff\x3c\x00\x00\x00\xad\x00\x00\x00\x00\x00\x00\x00\x2d\x01\x00\x00\x00\x00\x00\x00\xb8\xff\xff\xff\xd9\xff\xff\xff\xfd\x01\x00\x00\x07\x02\x00\x00\xc1\x01\x00\x00\x01\x02\x00\x00\xc1\x02\x00\x00\x81\x02\x00\x00\x00\x00\x00\x00\x77\x03\x00\x00\x79\x03\x00\x00\x00\x00\x00\x00\x50\x04\x00\x00\xe2\xff\xff\xff\x00\x00\x00\x00\xca\xff\xff\xff\xb3\x04\x00\x00\x59\x03\x00\x00\x6a\x03\x00\x00\x74\x03\x00\x00"#
+alex_tab_size :: Int
+alex_tab_size = 8
+alex_base :: Array Int Int
+alex_base = listArray (0 :: Int, 26)
+  [ -8
+  , 60
+  , 173
+  , 0
+  , 301
+  , 0
+  , -72
+  , -39
+  , 509
+  , 519
+  , 449
+  , 513
+  , 705
+  , 641
+  , 0
+  , 887
+  , 889
+  , 0
+  , -117
+  , 1104
+  , -29
+  , 0
+  , -43
+  , 1203
+  , 857
+  , 874
+  , 884
+  ]
 
-alex_table :: AlexAddr
-alex_table = AlexA# "\x00\x00\x10\x00\x10\x00\x10\x00\x10\x00\x10\x00\x09\x00\x0f\x00\x11\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10\x00\x14\x00\x14\x00\x00\x00\x00\x00\x13\x00\x14\x00\x00\x00\x11\x00\x11\x00\x11\x00\x14\x00\x11\x00\x15\x00\x11\x00\x11\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x14\x00\x11\x00\x14\x00\x11\x00\x14\x00\x14\x00\x00\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x11\x00\x11\x00\x11\x00\x14\x00\x00\x00\x00\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x11\x00\x11\x00\x11\x00\x14\x00\x0d\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x00\x00\x00\x00\x00\x00\x0b\x00\x0c\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x06\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x01\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x00\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x00\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x00\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x00\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x10\x00\x10\x00\x10\x00\x10\x00\x10\x00\x08\x00\x00\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x17\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x10\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x18\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x19\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x0c\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0e\x00\x0d\x00\x01\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x05\x00\x06\x00\x04\x00\x03\x00\x03\x00\x03\x00\x02\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x16\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x12\x00\x00\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x12\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x16\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x00\x00\x00\x00\x00\x00\x00\x00\x16\x00\x0b\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x16\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"#
+alex_table :: Array Int Int
+alex_table = listArray (0 :: Int, 1458)
+  [ 0
+  , 16
+  , 16
+  , 16
+  , 16
+  , 16
+  , 9
+  , 17
+  , 15
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 17
+  , 0
+  , 0
+  , 0
+  , 0
+  , 16
+  , 21
+  , 21
+  , 0
+  , 0
+  , 20
+  , 21
+  , 0
+  , 17
+  , 17
+  , 17
+  , 21
+  , 17
+  , 22
+  , 17
+  , 17
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 21
+  , 17
+  , 21
+  , 17
+  , 21
+  , 21
+  , 0
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 17
+  , 17
+  , 17
+  , 21
+  , 0
+  , 0
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 17
+  , 18
+  , 17
+  , 21
+  , 13
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 0
+  , 0
+  , 0
+  , 11
+  , 12
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 6
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 1
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 0
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 0
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 0
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 0
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 16
+  , 16
+  , 16
+  , 16
+  , 16
+  , 8
+  , 0
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 24
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 16
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 25
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 26
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 7
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 12
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 14
+  , 13
+  , 1
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 5
+  , 6
+  , 4
+  , 3
+  , 3
+  , 3
+  , 2
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 23
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 0
+  , 0
+  , 0
+  , 0
+  , 19
+  , 0
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 19
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 23
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 0
+  , 0
+  , 0
+  , 0
+  , 23
+  , 11
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 23
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 10
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  , 0
+  ]
 
-alex_check :: AlexAddr
-alex_check = AlexA# "\xff\xff\x09\x00\x0a\x00\x0b\x00\x0c\x00\x0d\x00\x2d\x00\x25\x00\x3e\x00\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x20\x00\x21\x00\x22\x00\xff\xff\xff\xff\x25\x00\x26\x00\xff\xff\x28\x00\x29\x00\x2a\x00\x2b\x00\x2c\x00\x2d\x00\x2e\x00\x2f\x00\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\x3a\x00\x3b\x00\x3c\x00\x3d\x00\x3e\x00\x3f\x00\xff\xff\x41\x00\x42\x00\x43\x00\x44\x00\x45\x00\x46\x00\x47\x00\x48\x00\x49\x00\x4a\x00\x4b\x00\x4c\x00\x4d\x00\x4e\x00\x4f\x00\x50\x00\x51\x00\x52\x00\x53\x00\x54\x00\x55\x00\x56\x00\x57\x00\x58\x00\x59\x00\x5a\x00\x5b\x00\x5c\x00\x5d\x00\x5e\x00\xff\xff\xff\xff\x61\x00\x62\x00\x63\x00\x64\x00\x65\x00\x66\x00\x67\x00\x68\x00\x69\x00\x6a\x00\x6b\x00\x6c\x00\x6d\x00\x6e\x00\x6f\x00\x70\x00\x71\x00\x72\x00\x73\x00\x74\x00\x75\x00\x76\x00\x77\x00\x78\x00\x79\x00\x7a\x00\x7b\x00\x7c\x00\x7d\x00\x7e\x00\xbf\x00\xc0\x00\xc1\x00\xc2\x00\xc3\x00\xc4\x00\xc5\x00\xc6\x00\xc7\x00\xc8\x00\xc9\x00\xca\x00\xcb\x00\xcc\x00\xcd\x00\xce\x00\xcf\x00\xd0\x00\xd1\x00\xd2\x00\xd3\x00\xd4\x00\xd5\x00\xd6\x00\xd7\x00\xd8\x00\xd9\x00\xda\x00\xdb\x00\xdc\x00\xdd\x00\xde\x00\xdf\x00\xe0\x00\xe1\x00\xe2\x00\xe3\x00\xe4\x00\xe5\x00\xe6\x00\xe7\x00\xe8\x00\xe9\x00\xea\x00\xeb\x00\xec\x00\xed\x00\xee\x00\xef\x00\xf0\x00\xf1\x00\xf2\x00\xf3\x00\xf4\x00\xf5\x00\xf6\x00\xf7\x00\xf8\x00\xf9\x00\xfa\x00\xfb\x00\xfc\x00\xfd\x00\xfe\x00\xff\x00\xff\xff\xff\xff\xff\xff\xc3\x00\x80\x00\x81\x00\x82\x00\x83\x00\x84\x00\x85\x00\x86\x00\x87\x00\x88\x00\x89\x00\x8a\x00\x8b\x00\x8c\x00\x8d\x00\x8e\x00\x8f\x00\x90\x00\x91\x00\x92\x00\x93\x00\x94\x00\x95\x00\x96\x00\x97\x00\x98\x00\x99\x00\x9a\x00\x9b\x00\x9c\x00\x9d\x00\x9e\x00\x9f\x00\xa0\x00\xa1\x00\xa2\x00\xa3\x00\xa4\x00\xa5\x00\xa6\x00\xa7\x00\xa8\x00\xa9\x00\xaa\x00\xab\x00\xac\x00\xad\x00\xae\x00\xaf\x00\xb0\x00\xb1\x00\xb2\x00\xb3\x00\xb4\x00\xb5\x00\xb6\x00\xb7\x00\xb8\x00\xb9\x00\xba\x00\xbb\x00\xbc\x00\xbd\x00\xbe\x00\xbf\x00\xc0\x00\xc1\x00\xc2\x00\xc3\x00\xc4\x00\xc5\x00\xc6\x00\xc7\x00\xc8\x00\xc9\x00\xca\x00\xcb\x00\xcc\x00\xcd\x00\xce\x00\xcf\x00\xd0\x00\xd1\x00\xd2\x00\xd3\x00\xd4\x00\xd5\x00\xd6\x00\xd7\x00\xd8\x00\xd9\x00\xda\x00\xdb\x00\xdc\x00\xdd\x00\xde\x00\xdf\x00\xe0\x00\xe1\x00\xe2\x00\xe3\x00\xe4\x00\xe5\x00\xe6\x00\xe7\x00\xe8\x00\xe9\x00\xea\x00\xeb\x00\xec\x00\xed\x00\xee\x00\xef\x00\xf0\x00\xf1\x00\xf2\x00\xf3\x00\xf4\x00\xf5\x00\xf6\x00\xf7\x00\xf8\x00\xf9\x00\xfa\x00\xfb\x00\xfc\x00\xfd\x00\xfe\x00\xff\x00\x8f\x00\x90\x00\x91\x00\x92\x00\x93\x00\x94\x00\x95\x00\x96\x00\x97\x00\x98\x00\x99\x00\x9a\x00\x9b\x00\x9c\x00\x9d\x00\x9e\x00\x9f\x00\xa0\x00\xa1\x00\xa2\x00\xa3\x00\xa4\x00\xa5\x00\xa6\x00\xa7\x00\xa8\x00\xa9\x00\xaa\x00\xab\x00\xac\x00\xad\x00\xae\x00\xaf\x00\xb0\x00\xb1\x00\xb2\x00\xb3\x00\xb4\x00\xb5\x00\xb6\x00\xb7\x00\xb8\x00\xb9\x00\xba\x00\xbb\x00\xbc\x00\xbd\x00\xbe\x00\xbf\x00\xc0\x00\xc1\x00\xc2\x00\xc3\x00\xc4\x00\xc5\x00\xc6\x00\xc7\x00\xc8\x00\xc9\x00\xca\x00\xcb\x00\xcc\x00\xcd\x00\xce\x00\xcf\x00\xd0\x00\xd1\x00\xd2\x00\xd3\x00\xd4\x00\xd5\x00\xd6\x00\xd7\x00\xd8\x00\xd9\x00\xda\x00\xdb\x00\xdc\x00\xdd\x00\xde\x00\xdf\x00\xe0\x00\xe1\x00\xe2\x00\xe3\x00\xe4\x00\xe5\x00\xe6\x00\xe7\x00\xe8\x00\xe9\x00\xea\x00\xeb\x00\xec\x00\xed\x00\xee\x00\xef\x00\xf0\x00\xf1\x00\xf2\x00\xf3\x00\xf4\x00\xf5\x00\xf6\x00\xf7\x00\xf8\x00\xf9\x00\xfa\x00\xfb\x00\xfc\x00\xfd\x00\xfe\x00\xff\x00\x80\x00\x81\x00\x82\x00\x83\x00\x84\x00\x85\x00\x86\x00\x87\x00\x88\x00\x89\x00\x8a\x00\x8b\x00\x8c\x00\x8d\x00\x8e\x00\x8f\x00\x90\x00\x91\x00\x92\x00\x93\x00\x94\x00\x95\x00\x96\x00\x97\x00\x98\x00\x99\x00\x9a\x00\x9b\x00\x9c\x00\x9d\x00\x9e\x00\x9f\x00\xa0\x00\xa1\x00\xa2\x00\xa3\x00\xa4\x00\xa5\x00\xa6\x00\xa7\x00\xa8\x00\xa9\x00\xaa\x00\xab\x00\xac\x00\xad\x00\xae\x00\xaf\x00\xb0\x00\xb1\x00\xb2\x00\xb3\x00\xb4\x00\xb5\x00\xb6\x00\xb7\x00\xb8\x00\xb9\x00\xba\x00\xbb\x00\xbc\x00\xbd\x00\xbe\x00\xbf\x00\xc0\x00\xc1\x00\xc2\x00\xc3\x00\xc4\x00\xc5\x00\xc6\x00\xc7\x00\xc8\x00\xc9\x00\xca\x00\xcb\x00\xcc\x00\xcd\x00\xce\x00\xcf\x00\xd0\x00\xd1\x00\xd2\x00\xd3\x00\xd4\x00\xd5\x00\xd6\x00\xd7\x00\xd8\x00\xd9\x00\xda\x00\xdb\x00\xdc\x00\xdd\x00\xde\x00\xdf\x00\xe0\x00\xe1\x00\xe2\x00\xe3\x00\xe4\x00\xe5\x00\xe6\x00\xe7\x00\xe8\x00\xe9\x00\xea\x00\xeb\x00\xec\x00\xed\x00\xee\x00\xef\x00\xf0\x00\xf1\x00\xf2\x00\xf3\x00\xf4\x00\xf5\x00\xf6\x00\xf7\x00\xf8\x00\xf9\x00\xfa\x00\xfb\x00\xfc\x00\xfd\x00\xfe\x00\xff\x00\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\x80\x00\x81\x00\x82\x00\x83\x00\x84\x00\x85\x00\x86\x00\x87\x00\x88\x00\x89\x00\x8a\x00\x8b\x00\x8c\x00\x8d\x00\x8e\x00\x8f\x00\x90\x00\x91\x00\x92\x00\x93\x00\x94\x00\x95\x00\x96\x00\xff\xff\x98\x00\x99\x00\x9a\x00\x9b\x00\x9c\x00\x9d\x00\x9e\x00\x9f\x00\xa0\x00\xa1\x00\xa2\x00\xa3\x00\xa4\x00\xa5\x00\xa6\x00\xa7\x00\xa8\x00\xa9\x00\xaa\x00\xab\x00\xac\x00\xad\x00\xae\x00\xaf\x00\xb0\x00\xb1\x00\xb2\x00\xb3\x00\xb4\x00\xb5\x00\xb6\x00\xff\xff\xb8\x00\xb9\x00\xba\x00\xbb\x00\xbc\x00\xbd\x00\xbe\x00\xbf\x00\x80\x00\x81\x00\x82\x00\x83\x00\x84\x00\x85\x00\x86\x00\x87\x00\x88\x00\x89\x00\x8a\x00\x8b\x00\x8c\x00\x8d\x00\x8e\x00\x8f\x00\x90\x00\x91\x00\x92\x00\x93\x00\x94\x00\x95\x00\x96\x00\xff\xff\x98\x00\x99\x00\x9a\x00\x9b\x00\x9c\x00\x9d\x00\x9e\x00\x9f\x00\xa0\x00\xa1\x00\xa2\x00\xa3\x00\xa4\x00\xa5\x00\xa6\x00\xa7\x00\xa8\x00\xa9\x00\xaa\x00\xab\x00\xac\x00\xad\x00\xae\x00\xaf\x00\xb0\x00\xb1\x00\xb2\x00\xb3\x00\xb4\x00\xb5\x00\xb6\x00\xff\xff\xb8\x00\xb9\x00\xba\x00\xbb\x00\xbc\x00\xbd\x00\xbe\x00\xbf\x00\x00\x00\x01\x00\x02\x00\x03\x00\x04\x00\x05\x00\x06\x00\x07\x00\x08\x00\x09\x00\x0a\x00\x0b\x00\x0c\x00\x0d\x00\x0e\x00\x0f\x00\x10\x00\x11\x00\x12\x00\x13\x00\x14\x00\x15\x00\x16\x00\x17\x00\x18\x00\x19\x00\x1a\x00\x1b\x00\x1c\x00\x1d\x00\x1e\x00\x1f\x00\x20\x00\x21\x00\x22\x00\x23\x00\x24\x00\x25\x00\x26\x00\x27\x00\x28\x00\x29\x00\x2a\x00\x2b\x00\x2c\x00\x2d\x00\x2e\x00\x2f\x00\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\x3a\x00\x3b\x00\x3c\x00\x3d\x00\x3e\x00\x3f\x00\x40\x00\x41\x00\x42\x00\x43\x00\x44\x00\x45\x00\x46\x00\x47\x00\x48\x00\x49\x00\x4a\x00\x4b\x00\x4c\x00\x4d\x00\x4e\x00\x4f\x00\x50\x00\x51\x00\x52\x00\x53\x00\x54\x00\x55\x00\x56\x00\x57\x00\x58\x00\x59\x00\x5a\x00\x5b\x00\x5c\x00\x5d\x00\x5e\x00\x5f\x00\x60\x00\x61\x00\x62\x00\x63\x00\x64\x00\x65\x00\x66\x00\x67\x00\x68\x00\x69\x00\x6a\x00\x6b\x00\x6c\x00\x6d\x00\x6e\x00\x6f\x00\x70\x00\x71\x00\x72\x00\x73\x00\x74\x00\x75\x00\x76\x00\x77\x00\x78\x00\x79\x00\x7a\x00\x7b\x00\x7c\x00\x7d\x00\x7e\x00\x7f\x00\xc0\x00\xc1\x00\xc2\x00\xc3\x00\xc4\x00\xc5\x00\xc6\x00\xc7\x00\xc8\x00\xc9\x00\xca\x00\xcb\x00\xcc\x00\xcd\x00\xce\x00\xcf\x00\xd0\x00\xd1\x00\xd2\x00\xd3\x00\xd4\x00\xd5\x00\xd6\x00\xd7\x00\xd8\x00\xd9\x00\xda\x00\xdb\x00\xdc\x00\xdd\x00\xde\x00\xdf\x00\xe0\x00\xe1\x00\xe2\x00\xe3\x00\xe4\x00\xe5\x00\xe6\x00\xe7\x00\xe8\x00\xe9\x00\xea\x00\xeb\x00\xec\x00\xed\x00\xee\x00\xef\x00\xf0\x00\xf1\x00\xf2\x00\xf3\x00\xf4\x00\xf5\x00\xf6\x00\xf7\x00\xf8\x00\xf9\x00\xfa\x00\xfb\x00\xfc\x00\xfd\x00\xfe\x00\xff\x00\x0a\x00\x09\x00\x0a\x00\x0b\x00\x0c\x00\x0d\x00\x2e\x00\xff\xff\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x20\x00\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x65\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x80\x00\x81\x00\x82\x00\x83\x00\x84\x00\x85\x00\x86\x00\x87\x00\x88\x00\x89\x00\x8a\x00\x8b\x00\x8c\x00\x8d\x00\x8e\x00\x8f\x00\x90\x00\x91\x00\x92\x00\x93\x00\x94\x00\x95\x00\x96\x00\x97\x00\x98\x00\x99\x00\x9a\x00\x9b\x00\x9c\x00\x9d\x00\x9e\x00\x9f\x00\xa0\x00\xa1\x00\xa2\x00\xa3\x00\xa4\x00\xa5\x00\xa6\x00\xa7\x00\xa8\x00\xa9\x00\xaa\x00\xab\x00\xac\x00\xad\x00\xae\x00\xaf\x00\xb0\x00\xb1\x00\xb2\x00\xb3\x00\xb4\x00\xb5\x00\xb6\x00\xb7\x00\xb8\x00\xb9\x00\xba\x00\xbb\x00\xbc\x00\xbd\x00\xbe\x00\xbf\x00\xc0\x00\xc1\x00\xc2\x00\xc3\x00\xc4\x00\xc5\x00\xc6\x00\xc7\x00\xc8\x00\xc9\x00\xca\x00\xcb\x00\xcc\x00\xcd\x00\xce\x00\xcf\x00\xd0\x00\xd1\x00\xd2\x00\xd3\x00\xd4\x00\xd5\x00\xd6\x00\xd7\x00\xd8\x00\xd9\x00\xda\x00\xdb\x00\xdc\x00\xdd\x00\xde\x00\xdf\x00\xe0\x00\xe1\x00\xe2\x00\xe3\x00\xe4\x00\xe5\x00\xe6\x00\xe7\x00\xe8\x00\xe9\x00\xea\x00\xeb\x00\xec\x00\xed\x00\xee\x00\xef\x00\xf0\x00\xf1\x00\xf2\x00\xf3\x00\xf4\x00\xf5\x00\xf6\x00\xf7\x00\xf8\x00\xf9\x00\xfa\x00\xfb\x00\xfc\x00\xfd\x00\xfe\x00\xff\x00\x27\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x41\x00\x42\x00\x43\x00\x44\x00\x45\x00\x46\x00\x47\x00\x48\x00\x49\x00\x4a\x00\x4b\x00\x4c\x00\x4d\x00\x4e\x00\x4f\x00\x50\x00\x51\x00\x52\x00\x53\x00\x54\x00\x55\x00\x56\x00\x57\x00\x58\x00\x59\x00\x5a\x00\xff\xff\xff\xff\xff\xff\xff\xff\x5f\x00\xff\xff\x61\x00\x62\x00\x63\x00\x64\x00\x65\x00\x66\x00\x67\x00\x68\x00\x69\x00\x6a\x00\x6b\x00\x6c\x00\x6d\x00\x6e\x00\x6f\x00\x70\x00\x71\x00\x72\x00\x73\x00\x74\x00\x75\x00\x76\x00\x77\x00\x78\x00\x79\x00\x7a\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x27\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x41\x00\x42\x00\x43\x00\x44\x00\x45\x00\x46\x00\x47\x00\x48\x00\x49\x00\x4a\x00\x4b\x00\x4c\x00\x4d\x00\x4e\x00\x4f\x00\x50\x00\x51\x00\x52\x00\x53\x00\x54\x00\x55\x00\x56\x00\x57\x00\x58\x00\x59\x00\x5a\x00\xff\xff\xff\xff\xff\xff\xff\xff\x5f\x00\xc3\x00\x61\x00\x62\x00\x63\x00\x64\x00\x65\x00\x66\x00\x67\x00\x68\x00\x69\x00\x6a\x00\x6b\x00\x6c\x00\x6d\x00\x6e\x00\x6f\x00\x70\x00\x71\x00\x72\x00\x73\x00\x74\x00\x75\x00\x76\x00\x77\x00\x78\x00\x79\x00\x7a\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xc3\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"#
+alex_check :: Array Int Int
+alex_check = listArray (0 :: Int, 1458)
+  [ -1
+  , 9
+  , 10
+  , 11
+  , 12
+  , 13
+  , 45
+  , 124
+  , 37
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , 62
+  , -1
+  , -1
+  , -1
+  , -1
+  , 32
+  , 33
+  , 34
+  , -1
+  , -1
+  , 37
+  , 38
+  , -1
+  , 40
+  , 41
+  , 42
+  , 43
+  , 44
+  , 45
+  , 46
+  , 47
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , 58
+  , 59
+  , 60
+  , 61
+  , 62
+  , 63
+  , -1
+  , 65
+  , 66
+  , 67
+  , 68
+  , 69
+  , 70
+  , 71
+  , 72
+  , 73
+  , 74
+  , 75
+  , 76
+  , 77
+  , 78
+  , 79
+  , 80
+  , 81
+  , 82
+  , 83
+  , 84
+  , 85
+  , 86
+  , 87
+  , 88
+  , 89
+  , 90
+  , 91
+  , 92
+  , 93
+  , 94
+  , -1
+  , -1
+  , 97
+  , 98
+  , 99
+  , 100
+  , 101
+  , 102
+  , 103
+  , 104
+  , 105
+  , 106
+  , 107
+  , 108
+  , 109
+  , 110
+  , 111
+  , 112
+  , 113
+  , 114
+  , 115
+  , 116
+  , 117
+  , 118
+  , 119
+  , 120
+  , 121
+  , 122
+  , 123
+  , 124
+  , 125
+  , 126
+  , 191
+  , 192
+  , 193
+  , 194
+  , 195
+  , 196
+  , 197
+  , 198
+  , 199
+  , 200
+  , 201
+  , 202
+  , 203
+  , 204
+  , 205
+  , 206
+  , 207
+  , 208
+  , 209
+  , 210
+  , 211
+  , 212
+  , 213
+  , 214
+  , 215
+  , 216
+  , 217
+  , 218
+  , 219
+  , 220
+  , 221
+  , 222
+  , 223
+  , 224
+  , 225
+  , 226
+  , 227
+  , 228
+  , 229
+  , 230
+  , 231
+  , 232
+  , 233
+  , 234
+  , 235
+  , 236
+  , 237
+  , 238
+  , 239
+  , 240
+  , 241
+  , 242
+  , 243
+  , 244
+  , 245
+  , 246
+  , 247
+  , 248
+  , 249
+  , 250
+  , 251
+  , 252
+  , 253
+  , 254
+  , 255
+  , -1
+  , -1
+  , -1
+  , 195
+  , 128
+  , 129
+  , 130
+  , 131
+  , 132
+  , 133
+  , 134
+  , 135
+  , 136
+  , 137
+  , 138
+  , 139
+  , 140
+  , 141
+  , 142
+  , 143
+  , 144
+  , 145
+  , 146
+  , 147
+  , 148
+  , 149
+  , 150
+  , 151
+  , 152
+  , 153
+  , 154
+  , 155
+  , 156
+  , 157
+  , 158
+  , 159
+  , 160
+  , 161
+  , 162
+  , 163
+  , 164
+  , 165
+  , 166
+  , 167
+  , 168
+  , 169
+  , 170
+  , 171
+  , 172
+  , 173
+  , 174
+  , 175
+  , 176
+  , 177
+  , 178
+  , 179
+  , 180
+  , 181
+  , 182
+  , 183
+  , 184
+  , 185
+  , 186
+  , 187
+  , 188
+  , 189
+  , 190
+  , 191
+  , 192
+  , 193
+  , 194
+  , 195
+  , 196
+  , 197
+  , 198
+  , 199
+  , 200
+  , 201
+  , 202
+  , 203
+  , 204
+  , 205
+  , 206
+  , 207
+  , 208
+  , 209
+  , 210
+  , 211
+  , 212
+  , 213
+  , 214
+  , 215
+  , 216
+  , 217
+  , 218
+  , 219
+  , 220
+  , 221
+  , 222
+  , 223
+  , 224
+  , 225
+  , 226
+  , 227
+  , 228
+  , 229
+  , 230
+  , 231
+  , 232
+  , 233
+  , 234
+  , 235
+  , 236
+  , 237
+  , 238
+  , 239
+  , 240
+  , 241
+  , 242
+  , 243
+  , 244
+  , 245
+  , 246
+  , 247
+  , 248
+  , 249
+  , 250
+  , 251
+  , 252
+  , 253
+  , 254
+  , 255
+  , 143
+  , 144
+  , 145
+  , 146
+  , 147
+  , 148
+  , 149
+  , 150
+  , 151
+  , 152
+  , 153
+  , 154
+  , 155
+  , 156
+  , 157
+  , 158
+  , 159
+  , 160
+  , 161
+  , 162
+  , 163
+  , 164
+  , 165
+  , 166
+  , 167
+  , 168
+  , 169
+  , 170
+  , 171
+  , 172
+  , 173
+  , 174
+  , 175
+  , 176
+  , 177
+  , 178
+  , 179
+  , 180
+  , 181
+  , 182
+  , 183
+  , 184
+  , 185
+  , 186
+  , 187
+  , 188
+  , 189
+  , 190
+  , 191
+  , 192
+  , 193
+  , 194
+  , 195
+  , 196
+  , 197
+  , 198
+  , 199
+  , 200
+  , 201
+  , 202
+  , 203
+  , 204
+  , 205
+  , 206
+  , 207
+  , 208
+  , 209
+  , 210
+  , 211
+  , 212
+  , 213
+  , 214
+  , 215
+  , 216
+  , 217
+  , 218
+  , 219
+  , 220
+  , 221
+  , 222
+  , 223
+  , 224
+  , 225
+  , 226
+  , 227
+  , 228
+  , 229
+  , 230
+  , 231
+  , 232
+  , 233
+  , 234
+  , 235
+  , 236
+  , 237
+  , 238
+  , 239
+  , 240
+  , 241
+  , 242
+  , 243
+  , 244
+  , 245
+  , 246
+  , 247
+  , 248
+  , 249
+  , 250
+  , 251
+  , 252
+  , 253
+  , 254
+  , 255
+  , 128
+  , 129
+  , 130
+  , 131
+  , 132
+  , 133
+  , 134
+  , 135
+  , 136
+  , 137
+  , 138
+  , 139
+  , 140
+  , 141
+  , 142
+  , 143
+  , 144
+  , 145
+  , 146
+  , 147
+  , 148
+  , 149
+  , 150
+  , 151
+  , 152
+  , 153
+  , 154
+  , 155
+  , 156
+  , 157
+  , 158
+  , 159
+  , 160
+  , 161
+  , 162
+  , 163
+  , 164
+  , 165
+  , 166
+  , 167
+  , 168
+  , 169
+  , 170
+  , 171
+  , 172
+  , 173
+  , 174
+  , 175
+  , 176
+  , 177
+  , 178
+  , 179
+  , 180
+  , 181
+  , 182
+  , 183
+  , 184
+  , 185
+  , 186
+  , 187
+  , 188
+  , 189
+  , 190
+  , 191
+  , 192
+  , 193
+  , 194
+  , 195
+  , 196
+  , 197
+  , 198
+  , 199
+  , 200
+  , 201
+  , 202
+  , 203
+  , 204
+  , 205
+  , 206
+  , 207
+  , 208
+  , 209
+  , 210
+  , 211
+  , 212
+  , 213
+  , 214
+  , 215
+  , 216
+  , 217
+  , 218
+  , 219
+  , 220
+  , 221
+  , 222
+  , 223
+  , 224
+  , 225
+  , 226
+  , 227
+  , 228
+  , 229
+  , 230
+  , 231
+  , 232
+  , 233
+  , 234
+  , 235
+  , 236
+  , 237
+  , 238
+  , 239
+  , 240
+  , 241
+  , 242
+  , 243
+  , 244
+  , 245
+  , 246
+  , 247
+  , 248
+  , 249
+  , 250
+  , 251
+  , 252
+  , 253
+  , 254
+  , 255
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , 128
+  , 129
+  , 130
+  , 131
+  , 132
+  , 133
+  , 134
+  , 135
+  , 136
+  , 137
+  , 138
+  , 139
+  , 140
+  , 141
+  , 142
+  , 143
+  , 144
+  , 145
+  , 146
+  , 147
+  , 148
+  , 149
+  , 150
+  , -1
+  , 152
+  , 153
+  , 154
+  , 155
+  , 156
+  , 157
+  , 158
+  , 159
+  , 160
+  , 161
+  , 162
+  , 163
+  , 164
+  , 165
+  , 166
+  , 167
+  , 168
+  , 169
+  , 170
+  , 171
+  , 172
+  , 173
+  , 174
+  , 175
+  , 176
+  , 177
+  , 178
+  , 179
+  , 180
+  , 181
+  , 182
+  , -1
+  , 184
+  , 185
+  , 186
+  , 187
+  , 188
+  , 189
+  , 190
+  , 191
+  , 128
+  , 129
+  , 130
+  , 131
+  , 132
+  , 133
+  , 134
+  , 135
+  , 136
+  , 137
+  , 138
+  , 139
+  , 140
+  , 141
+  , 142
+  , 143
+  , 144
+  , 145
+  , 146
+  , 147
+  , 148
+  , 149
+  , 150
+  , -1
+  , 152
+  , 153
+  , 154
+  , 155
+  , 156
+  , 157
+  , 158
+  , 159
+  , 160
+  , 161
+  , 162
+  , 163
+  , 164
+  , 165
+  , 166
+  , 167
+  , 168
+  , 169
+  , 170
+  , 171
+  , 172
+  , 173
+  , 174
+  , 175
+  , 176
+  , 177
+  , 178
+  , 179
+  , 180
+  , 181
+  , 182
+  , -1
+  , 184
+  , 185
+  , 186
+  , 187
+  , 188
+  , 189
+  , 190
+  , 191
+  , 0
+  , 1
+  , 2
+  , 3
+  , 4
+  , 5
+  , 6
+  , 7
+  , 8
+  , 9
+  , 10
+  , 11
+  , 12
+  , 13
+  , 14
+  , 15
+  , 16
+  , 17
+  , 18
+  , 19
+  , 20
+  , 21
+  , 22
+  , 23
+  , 24
+  , 25
+  , 26
+  , 27
+  , 28
+  , 29
+  , 30
+  , 31
+  , 32
+  , 33
+  , 34
+  , 35
+  , 36
+  , 37
+  , 38
+  , 39
+  , 40
+  , 41
+  , 42
+  , 43
+  , 44
+  , 45
+  , 46
+  , 47
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , 58
+  , 59
+  , 60
+  , 61
+  , 62
+  , 63
+  , 64
+  , 65
+  , 66
+  , 67
+  , 68
+  , 69
+  , 70
+  , 71
+  , 72
+  , 73
+  , 74
+  , 75
+  , 76
+  , 77
+  , 78
+  , 79
+  , 80
+  , 81
+  , 82
+  , 83
+  , 84
+  , 85
+  , 86
+  , 87
+  , 88
+  , 89
+  , 90
+  , 91
+  , 92
+  , 93
+  , 94
+  , 95
+  , 96
+  , 97
+  , 98
+  , 99
+  , 100
+  , 101
+  , 102
+  , 103
+  , 104
+  , 105
+  , 106
+  , 107
+  , 108
+  , 109
+  , 110
+  , 111
+  , 112
+  , 113
+  , 114
+  , 115
+  , 116
+  , 117
+  , 118
+  , 119
+  , 120
+  , 121
+  , 122
+  , 123
+  , 124
+  , 125
+  , 126
+  , 127
+  , 192
+  , 193
+  , 194
+  , 195
+  , 196
+  , 197
+  , 198
+  , 199
+  , 200
+  , 201
+  , 202
+  , 203
+  , 204
+  , 205
+  , 206
+  , 207
+  , 208
+  , 209
+  , 210
+  , 211
+  , 212
+  , 213
+  , 214
+  , 215
+  , 216
+  , 217
+  , 218
+  , 219
+  , 220
+  , 221
+  , 222
+  , 223
+  , 224
+  , 225
+  , 226
+  , 227
+  , 228
+  , 229
+  , 230
+  , 231
+  , 232
+  , 233
+  , 234
+  , 235
+  , 236
+  , 237
+  , 238
+  , 239
+  , 240
+  , 241
+  , 242
+  , 243
+  , 244
+  , 245
+  , 246
+  , 247
+  , 248
+  , 249
+  , 250
+  , 251
+  , 252
+  , 253
+  , 254
+  , 255
+  , 10
+  , 9
+  , 10
+  , 11
+  , 12
+  , 13
+  , 46
+  , -1
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 32
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 101
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 128
+  , 129
+  , 130
+  , 131
+  , 132
+  , 133
+  , 134
+  , 135
+  , 136
+  , 137
+  , 138
+  , 139
+  , 140
+  , 141
+  , 142
+  , 143
+  , 144
+  , 145
+  , 146
+  , 147
+  , 148
+  , 149
+  , 150
+  , 151
+  , 152
+  , 153
+  , 154
+  , 155
+  , 156
+  , 157
+  , 158
+  , 159
+  , 160
+  , 161
+  , 162
+  , 163
+  , 164
+  , 165
+  , 166
+  , 167
+  , 168
+  , 169
+  , 170
+  , 171
+  , 172
+  , 173
+  , 174
+  , 175
+  , 176
+  , 177
+  , 178
+  , 179
+  , 180
+  , 181
+  , 182
+  , 183
+  , 184
+  , 185
+  , 186
+  , 187
+  , 188
+  , 189
+  , 190
+  , 191
+  , 192
+  , 193
+  , 194
+  , 195
+  , 196
+  , 197
+  , 198
+  , 199
+  , 200
+  , 201
+  , 202
+  , 203
+  , 204
+  , 205
+  , 206
+  , 207
+  , 208
+  , 209
+  , 210
+  , 211
+  , 212
+  , 213
+  , 214
+  , 215
+  , 216
+  , 217
+  , 218
+  , 219
+  , 220
+  , 221
+  , 222
+  , 223
+  , 224
+  , 225
+  , 226
+  , 227
+  , 228
+  , 229
+  , 230
+  , 231
+  , 232
+  , 233
+  , 234
+  , 235
+  , 236
+  , 237
+  , 238
+  , 239
+  , 240
+  , 241
+  , 242
+  , 243
+  , 244
+  , 245
+  , 246
+  , 247
+  , 248
+  , 249
+  , 250
+  , 251
+  , 252
+  , 253
+  , 254
+  , 255
+  , 39
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 65
+  , 66
+  , 67
+  , 68
+  , 69
+  , 70
+  , 71
+  , 72
+  , 73
+  , 74
+  , 75
+  , 76
+  , 77
+  , 78
+  , 79
+  , 80
+  , 81
+  , 82
+  , 83
+  , 84
+  , 85
+  , 86
+  , 87
+  , 88
+  , 89
+  , 90
+  , -1
+  , -1
+  , -1
+  , -1
+  , 95
+  , -1
+  , 97
+  , 98
+  , 99
+  , 100
+  , 101
+  , 102
+  , 103
+  , 104
+  , 105
+  , 106
+  , 107
+  , 108
+  , 109
+  , 110
+  , 111
+  , 112
+  , 113
+  , 114
+  , 115
+  , 116
+  , 117
+  , 118
+  , 119
+  , 120
+  , 121
+  , 122
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 39
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 48
+  , 49
+  , 50
+  , 51
+  , 52
+  , 53
+  , 54
+  , 55
+  , 56
+  , 57
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 65
+  , 66
+  , 67
+  , 68
+  , 69
+  , 70
+  , 71
+  , 72
+  , 73
+  , 74
+  , 75
+  , 76
+  , 77
+  , 78
+  , 79
+  , 80
+  , 81
+  , 82
+  , 83
+  , 84
+  , 85
+  , 86
+  , 87
+  , 88
+  , 89
+  , 90
+  , -1
+  , -1
+  , -1
+  , -1
+  , 95
+  , 195
+  , 97
+  , 98
+  , 99
+  , 100
+  , 101
+  , 102
+  , 103
+  , 104
+  , 105
+  , 106
+  , 107
+  , 108
+  , 109
+  , 110
+  , 111
+  , 112
+  , 113
+  , 114
+  , 115
+  , 116
+  , 117
+  , 118
+  , 119
+  , 120
+  , 121
+  , 122
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 195
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  ]
 
-alex_deflt :: AlexAddr
-alex_deflt = AlexA# "\xff\xff\xff\xff\x05\x00\x05\x00\xff\xff\x0e\x00\x0e\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\x0f\x00\x0f\x00\x0f\x00\x0f\x00\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff"#
+alex_deflt :: Array Int Int
+alex_deflt = listArray (0 :: Int, 26)
+  [ -1
+  , -1
+  , 5
+  , 5
+  , -1
+  , 14
+  , 14
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , 15
+  , 15
+  , 15
+  , 15
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  , -1
+  ]
 
-alex_accept = listArray (0::Int,25) [AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccNone,AlexAccSkip,AlexAccSkip,AlexAcc (alex_action_2),AlexAcc (alex_action_3),AlexAcc (alex_action_4),AlexAcc (alex_action_4),AlexAcc (alex_action_4),AlexAcc (alex_action_5),AlexAcc (alex_action_6),AlexAcc (alex_action_7),AlexAcc (alex_action_7)]
-{-# LINE 39 "Lexaesir.x" #-}
+alex_accept = listArray (0 :: Int, 26)
+  [ AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccNone
+  , AlexAccSkip
+  , AlexAccSkip
+  , AlexAcc 9
+  , AlexAcc 8
+  , AlexAcc 7
+  , AlexAcc 6
+  , AlexAcc 5
+  , AlexAcc 4
+  , AlexAcc 3
+  , AlexAcc 2
+  , AlexAcc 1
+  , AlexAcc 0
+  ]
+
+alex_actions = array (0 :: Int, 10)
+  [ (9,alex_action_2)
+  , (8,alex_action_2)
+  , (7,alex_action_3)
+  , (6,alex_action_4)
+  , (5,alex_action_4)
+  , (4,alex_action_4)
+  , (3,alex_action_5)
+  , (2,alex_action_6)
+  , (1,alex_action_7)
+  , (0,alex_action_7)
+  ]
+
+{-# LINE 40 "LexAesir.x" #-}
 
 
 tok :: (Posn -> String -> Token) -> (Posn -> String -> Token)
@@ -88,7 +3103,7 @@ mkPosToken t@(PT p _) = (posLineCol p, prToken t)
 prToken :: Token -> String
 prToken t = case t of
   PT _ (TS s _) -> s
-  PT _ (TL s)   -> s
+  PT _ (TL s)   -> show s
   PT _ (TI s)   -> s
   PT _ (TV s)   -> s
   PT _ (TD s)   -> s
@@ -108,7 +3123,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "STARTING" 21 (b "ACTEVENTS" 11 (b "." 6 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "->" 5 (b "," 4 N N) N)) (b "=" 9 (b ";" 8 (b "/" 7 N N) N) (b "ACCEPTING" 10 N N))) (b "INITPROP" 16 (b "FOREACH" 14 (b "CINVARIANTS" 13 (b "BAD" 12 N N) N) (b "IMPORTS" 15 N N)) (b "NORMAL" 19 (b "MODEL" 18 (b "METHODS" 17 N N) N) (b "PROPERTY" 20 N N)))) (b "call" 31 (b "TRIGGERS" 26 (b "TEMPLATES" 24 (b "TEMPLATE" 23 (b "STATES" 22 N N) N) (b "TRANSITIONS" 25 N N)) (b "\\" 29 (b "[" 28 (b "VARIABLES" 27 N N) N) (b "]" 30 N N))) (b "import" 36 (b "exit" 34 (b "execution" 33 (b "entry" 32 N N) N) (b "final" 35 N N)) (b "|" 39 (b "{" 38 (b "where" 37 N N) N) (b "}" 40 N N))))
+resWords = b "STARTING" 21 (b "ACTEVENTS" 11 (b "." 6 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "->" 5 (b "," 4 N N) N)) (b "=" 9 (b ";" 8 (b "/" 7 N N) N) (b "ACCEPTING" 10 N N))) (b "INITPROP" 16 (b "FOREACH" 14 (b "CINVARIANTS" 13 (b "BAD" 12 N N) N) (b "IMPORTS" 15 N N)) (b "NORMAL" 19 (b "MODEL" 18 (b "METHODS" 17 N N) N) (b "PROPERTY" 20 N N)))) (b "entry" 32 (b "VARIABLES" 27 (b "TEMPLATES" 24 (b "TEMPLATE" 23 (b "STATES" 22 N N) N) (b "TRIGGERS" 26 (b "TRANSITIONS" 25 N N) N)) (b "]" 30 (b "\\" 29 (b "[" 28 N N) N) (b "call" 31 N N))) (b "where" 37 (b "final" 35 (b "exit" 34 (b "execution" 33 N N) N) (b "import" 36 N N)) (b "||" 40 (b "|" 39 (b "{" 38 N N) N) (b "}" 41 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 
@@ -197,63 +3212,6 @@ alex_action_5 =  tok (\p s -> PT p (eitherResIdent (TV . share) s))
 alex_action_6 =  tok (\p s -> PT p (TI $ share s))    
 alex_action_7 =  tok (\p s -> PT p (TD $ share s)) 
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
-{-# LINE 1 "templates/GenericTemplate.hs" #-}
-{-# LINE 1 "<built-in>" #-}
-{-# LINE 1 "<command-line>" #-}
-
-
-
-
-
-
-
-# 1 "/usr/include/stdc-predef.h" 1 3 4
-
-# 17 "/usr/include/stdc-predef.h" 3 4
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-{-# LINE 7 "<command-line>" #-}
-{-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
 --
@@ -263,76 +3221,102 @@ alex_action_7 =  tok (\p s -> PT p (TD $ share s))
 -- -----------------------------------------------------------------------------
 -- INTERNALS and main scanner engine
 
-{-# LINE 21 "templates/GenericTemplate.hs" #-}
-
-
-
-
-
--- Do not remove this comment. Required to fix CPP parsing when using GCC and a clang-compiled alex.
-#if __GLASGOW_HASKELL__ > 706
-#define GTE(n,m) (tagToEnum# (n >=# m))
-#define EQ(n,m) (tagToEnum# (n ==# m))
-#else
-#define GTE(n,m) (n >=# m)
-#define EQ(n,m) (n ==# m)
-#endif
-{-# LINE 51 "templates/GenericTemplate.hs" #-}
-
-
-data AlexAddr = AlexA# Addr#
--- Do not remove this comment. Required to fix CPP parsing when using GCC and a clang-compiled alex.
-#if __GLASGOW_HASKELL__ < 503
-uncheckedShiftL# = shiftL#
-#endif
-
-{-# INLINE alexIndexInt16OffAddr #-}
-alexIndexInt16OffAddr (AlexA# arr) off =
-#ifdef WORDS_BIGENDIAN
-  narrow16Int# i
-  where
-        i    = word2Int# ((high `uncheckedShiftL#` 8#) `or#` low)
-        high = int2Word# (ord# (indexCharOffAddr# arr (off' +# 1#)))
-        low  = int2Word# (ord# (indexCharOffAddr# arr off'))
-        off' = off *# 2#
-#else
-  indexInt16OffAddr# arr off
-#endif
-
-
-
-
-
-{-# INLINE alexIndexInt32OffAddr #-}
-alexIndexInt32OffAddr (AlexA# arr) off = 
-#ifdef WORDS_BIGENDIAN
-  narrow32Int# i
-  where
-   i    = word2Int# ((b3 `uncheckedShiftL#` 24#) `or#`
-		     (b2 `uncheckedShiftL#` 16#) `or#`
-		     (b1 `uncheckedShiftL#` 8#) `or#` b0)
-   b3   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 3#)))
-   b2   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 2#)))
-   b1   = int2Word# (ord# (indexCharOffAddr# arr (off' +# 1#)))
-   b0   = int2Word# (ord# (indexCharOffAddr# arr off'))
-   off' = off *# 4#
-#else
-  indexInt32OffAddr# arr off
-#endif
 
 
 
 
 
 
-#if __GLASGOW_HASKELL__ < 503
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+alexIndexInt16OffAddr arr off = arr ! off
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+alexIndexInt32OffAddr arr off = arr ! off
+
+
+
+
+
+
+
+
+
+
+
 quickIndex arr i = arr ! i
-#else
--- GHC >= 503, unsafeAt is available from Data.Array.Base.
-quickIndex = unsafeAt
-#endif
-
-
 
 
 -- -----------------------------------------------------------------------------
@@ -345,91 +3329,122 @@ data AlexReturn a
   | AlexToken  !AlexInput !Int a
 
 -- alexScan :: AlexInput -> StartCode -> AlexReturn a
-alexScan input (I# (sc))
-  = alexScanUser undefined input (I# (sc))
+alexScan input__ (sc)
+  = alexScanUser undefined input__ (sc)
 
-alexScanUser user input (I# (sc))
-  = case alex_scan_tkn user input 0# input sc AlexNone of
-	(AlexNone, input') ->
-		case alexGetByte input of
-			Nothing -> 
-
-
-
-				   AlexEOF
-			Just _ ->
+alexScanUser user__ input__ (sc)
+  = case alex_scan_tkn user__ input__ (0) input__ sc AlexNone of
+  (AlexNone, input__') ->
+    case alexGetByte input__ of
+      Nothing ->
 
 
 
-				   AlexError input'
-
-	(AlexLastSkip input'' len, _) ->
-
-
-
-		AlexSkip input'' len
-
-	(AlexLastAcc k input''' len, _) ->
+                                   AlexEOF
+      Just _ ->
 
 
 
-		AlexToken input''' len k
+                                   AlexError input__'
+
+  (AlexLastSkip input__'' len, _) ->
+
+
+
+    AlexSkip input__'' len
+
+  (AlexLastAcc k input__''' len, _) ->
+
+
+
+    AlexToken input__''' len (alex_actions ! k)
 
 
 -- Push the input through the DFA, remembering the most recent accepting
 -- state it encountered.
 
-alex_scan_tkn user orig_input len input s last_acc =
-  input `seq` -- strict in the input
-  let 
-	new_acc = (check_accs (alex_accept `quickIndex` (I# (s))))
+alex_scan_tkn user__ orig_input len input__ s last_acc =
+  input__ `seq` -- strict in the input
+  let
+  new_acc = (check_accs (alex_accept `quickIndex` (s)))
   in
   new_acc `seq`
-  case alexGetByte input of
-     Nothing -> (new_acc, input)
-     Just (c, new_input) -> 
+  case alexGetByte input__ of
+     Nothing -> (new_acc, input__)
+     Just (c, new_input) ->
 
 
 
-      case fromIntegral c of { (I# (ord_c)) ->
+      case fromIntegral c of { (ord_c) ->
         let
                 base   = alexIndexInt32OffAddr alex_base s
-                offset = (base +# ord_c)
+                offset = (base + ord_c)
                 check  = alexIndexInt16OffAddr alex_check offset
-		
-                new_s = if GTE(offset,0#) && EQ(check,ord_c)
-			  then alexIndexInt16OffAddr alex_table offset
-			  else alexIndexInt16OffAddr alex_deflt s
-	in
+
+                new_s = if (offset >= (0)) && (check == ord_c)
+                          then alexIndexInt16OffAddr alex_table offset
+                          else alexIndexInt16OffAddr alex_deflt s
+        in
         case new_s of
-	    -1# -> (new_acc, input)
-		-- on an error, we want to keep the input *before* the
-		-- character that failed, not after.
-    	    _ -> alex_scan_tkn user orig_input (if c < 0x80 || c >= 0xC0 then (len +# 1#) else len)
+            (-1) -> (new_acc, input__)
+                -- on an error, we want to keep the input *before* the
+                -- character that failed, not after.
+            _ -> alex_scan_tkn user__ orig_input (if c < 0x80 || c >= 0xC0 then (len + (1)) else len)
                                                 -- note that the length is increased ONLY if this is the 1st byte in a char encoding)
-			new_input new_s new_acc
+                        new_input new_s new_acc
       }
   where
-	check_accs (AlexAccNone) = last_acc
-	check_accs (AlexAcc a  ) = AlexLastAcc a input (I# (len))
-	check_accs (AlexAccSkip) = AlexLastSkip  input (I# (len))
-{-# LINE 198 "templates/GenericTemplate.hs" #-}
+        check_accs (AlexAccNone) = last_acc
+        check_accs (AlexAcc a  ) = AlexLastAcc a input__ (len)
+        check_accs (AlexAccSkip) = AlexLastSkip  input__ (len)
 
-data AlexLastAcc a
+        check_accs (AlexAccPred a predx rest)
+           | predx user__ orig_input (len) input__
+           = AlexLastAcc a input__ (len)
+           | otherwise
+           = check_accs rest
+        check_accs (AlexAccSkipPred predx rest)
+           | predx user__ orig_input (len) input__
+           = AlexLastSkip input__ (len)
+           | otherwise
+           = check_accs rest
+
+
+data AlexLastAcc
   = AlexNone
-  | AlexLastAcc a !AlexInput !Int
-  | AlexLastSkip  !AlexInput !Int
+  | AlexLastAcc !Int !AlexInput !Int
+  | AlexLastSkip     !AlexInput !Int
 
-instance Functor AlexLastAcc where
-    fmap f AlexNone = AlexNone
-    fmap f (AlexLastAcc x y z) = AlexLastAcc (f x) y z
-    fmap f (AlexLastSkip x y) = AlexLastSkip x y
-
-data AlexAcc a user
+data AlexAcc user
   = AlexAccNone
-  | AlexAcc a
+  | AlexAcc Int
   | AlexAccSkip
-{-# LINE 242 "templates/GenericTemplate.hs" #-}
 
--- used by wrappers
-iUnbox (I# (i)) = i
+  | AlexAccPred Int (AlexAccPred user) (AlexAcc user)
+  | AlexAccSkipPred (AlexAccPred user) (AlexAcc user)
+
+type AlexAccPred user = user -> AlexInput -> Int -> AlexInput -> Bool
+
+-- -----------------------------------------------------------------------------
+-- Predicates on a rule
+
+alexAndPred p1 p2 user__ in1 len in2
+  = p1 user__ in1 len in2 && p2 user__ in1 len in2
+
+--alexPrevCharIsPred :: Char -> AlexAccPred _
+alexPrevCharIs c _ input__ _ _ = c == alexInputPrevChar input__
+
+alexPrevCharMatches f _ input__ _ _ = f (alexInputPrevChar input__)
+
+--alexPrevCharIsOneOfPred :: Array Char Bool -> AlexAccPred _
+alexPrevCharIsOneOf arr _ input__ _ _ = arr ! alexInputPrevChar input__
+
+--alexRightContext :: Int -> AlexAccPred _
+alexRightContext (sc) user__ _ _ input__ =
+     case alex_scan_tkn user__ input__ (0) input__ sc AlexNone of
+          (AlexNone, _) -> False
+          _ -> True
+        -- TODO: there's no need to find the longest
+        -- match when checking the right context, just
+        -- the first match will do.
+
