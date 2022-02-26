@@ -35,7 +35,11 @@ computeBRT cm mp iter st jpath out_add =
     else do createDirectoryIfMissing False toAnalyse_add
             copyFiles jpath toAnalyse_add
             injectJMLinitial cm toAnalyse_add
-            brt cm root mp iter trs out_add
+            case model ^. assignableGet of
+               AssNil           -> brt cm root mp iter trs out_add
+               TAssignables ass -> do let hts = map mkHTass ass
+                                      injectJMLannotations cm toAnalyse_add hts
+                                      brt cm root mp iter trs out_add
 
 --------------------------------------------------------
 -- Backwards reachability tree computation iterations --
@@ -223,6 +227,20 @@ mkHT jmlexp trs (Transition q (Arrow tr c _ _) q') =
     , _path2it    = ""
     , _varThis    = ("","")
     }
+
+mkHTass :: Ass -> HT
+mkHTass (Ass cl m ass) =
+ HT { _htName     = "ass_"++m
+    , _methodCN   = MCN cl m OverNil
+    , _pre        = "true"
+    , _post       = "true"
+    , _assignable = intercalate "," ass
+    , _newPRe     = []
+    , _chGet      = 0
+    , _path2it    = ""
+    , _varThis    = ("","")
+    }
+
 
 -------------
 -- Run KeY --

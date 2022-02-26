@@ -972,7 +972,12 @@ genAssignables' Abs.AssNil            = return (TAssignables [])
 genAssignables' (Abs.Assignables ass) = return $ TAssignables $ map getAss ass
 
 getAss :: Abs.Assignable -> Ass
-getAss (Abs.Ass cl m ass) = Ass (getIdAbs cl) (getIdAbs m) (map getIdAbs ass)
+getAss (Abs.Ass cl m ass) = Ass (getIdAbs cl) (getIdAbs m) (map (transfrom2JML.getIdAbs) ass)
+
+transfrom2JML :: Id -> String
+transfrom2JML "NOTHING"    = "\\nothing"
+transfrom2JML "EVERYTHING" = "\\everything"
+transfrom2JML s            = s
 
 -------------
 -- Methods --

@@ -1,16 +1,16 @@
-module ParserXMLKeYOut(parse) where 
+module ParserXMLKeYOut(parse) where
 
 import Types
 import Text.XML.HaXml
 import Text.XML.HaXml.Parse
 import Text.XML.HaXml.Posn
 import CommonFunctions
-import Data.List 
+import Data.List
 import Control.Lens hiding(Context,pre)
 
 
 parse :: XML -> [Proof]
-parse xml_fn = 
+parse xml_fn =
   let xml = xmlParse "(No Document)" xml_fn
       (Document _ _ root _) = xml
       rootElem = CElem root noPos
@@ -34,7 +34,7 @@ parse xml_fn =
                                         , contractText  = x ^. _2
                                         , typee         = x ^. _3
                                         , target        = frth x
-                                        , executionPath = ep 
+                                        , executionPath = ep
                                         }) : xs
                 frth (_,_,_,t) = t
 
@@ -45,7 +45,7 @@ symbolsXML :: [(String,String)]
 symbolsXML = [("&amp;","&&"), ("&gt;=",">="), ("&gt;", ">"), (" =","=="), ("&quot;","\""),("&apos;","\\"),("&lt;","<"),("&lt;=","<="),("TRUE","true"),("FALSE","false")]
 
 translate :: String -> String
-translate s = (\ x -> replaceSymbols x symbolsXML) s
+translate s = (\ x -> replaceSymbols x symbolsXML) (replaceEXC_ s)
 
 replaceSymbols :: String -> [(String, String)] -> String
 replaceSymbols [] _            = ""
@@ -56,7 +56,17 @@ replaceSymbols s ((id,def):xs) = let ys = splitOnIdentifier id s
                                     else replaceSymbols (head ys ++ (concat (map (def++) $ tail ys))) xs
 
 getFromQN :: QName -> Name
-getFromQN (N s) = s 
+getFromQN (N s) = s
+
+--TODO: Upgrade this function to analyse exc_ as part of non-atomic expression
+replaceEXC_ :: String -> String
+replaceEXC_ s =
+  let xs = splitOnIdentifier "=" s
+  in if (length xs == 1)
+     then s
+     else if (isInfixOf "exc_" (trim (head xs)) && ((trim $ head (tail xs)) == "null"))
+          then "true"
+          else s
 
 -----------
 -- Proof --
@@ -66,9 +76,9 @@ getProofInfo :: Content i -> (ContractId, ContractText, Type, Target)
 getProofInfo (CElem (Elem name as _) _) =
   if (getFromQN name == "proof")
   then let cid = lookForVal "contractId" as
-           ct  = lookForVal "contractText" as 
-           t   = lookForVal "type" as 
-           tar = lookForVal "target" as 
+           ct  = lookForVal "contractText" as
+           t   = lookForVal "type" as
+           tar = lookForVal "target" as
        in (cid, ct, t, tar)
   else ("","","","")
 
@@ -83,19 +93,19 @@ getPathCondition (CElem (Elem name attributes _) _) =
   else ""
 
 getVerified :: Content i -> String
-getVerified (CElem (Elem name attributes _) _) = 
+getVerified (CElem (Elem name attributes _) _) =
   if (getFromQN name == "executionPath")
   then lookForVal "verified" attributes
   else ""
 
 getNewPrecondition :: Content i -> String
-getNewPrecondition (CElem (Elem name attributes _) _) = 
+getNewPrecondition (CElem (Elem name attributes _) _) =
   if (getFromQN name == "executionPath")
   then lookForVal "newPrecondition" attributes
   else ""
 
 getTerminationKind :: Content i -> String
-getTerminationKind (CElem (Elem name attributes _) _) = 
+getTerminationKind (CElem (Elem name attributes _) _) =
   if (getFromQN name == "executionPath")
   then lookForVal "terminationKind" attributes
   else ""
@@ -105,14 +115,14 @@ getTerminationKind (CElem (Elem name attributes _) _) =
 ------------------------------
 
 getNotFulfilledPres :: Content i -> [MethodContractApplication]
-getNotFulfilledPres (CElem (Elem name _ content) _) = 
+getNotFulfilledPres (CElem (Elem name _ content) _) =
   if (getFromQN name == "executionPath")
   then getNotFulfilledPresC content
   else []
 
 getNotFulfilledPresC :: [Content i] -> [MethodContractApplication]
 getNotFulfilledPresC []                                   = []
-getNotFulfilledPresC ((CElem (Elem name _ content) _):xs) = 
+getNotFulfilledPresC ((CElem (Elem name _ content) _):xs) =
   if (getFromQN name == "notFulfilledPreconditions")
   then getMethodContractApplication content ++ getNotFulfilledPresC xs
   else getNotFulfilledPresC xs
@@ -120,14 +130,14 @@ getNotFulfilledPresC (_:xs)                               = getNotFulfilledPresC
 
 
 getNotFulfilledNullChecks :: Content i -> [MethodContractApplication]
-getNotFulfilledNullChecks (CElem (Elem name _ content) _) = 
+getNotFulfilledNullChecks (CElem (Elem name _ content) _) =
   if (getFromQN name == "executionPath")
   then getNotFulfilledNullChecksC content
   else []
 
 getNotFulfilledNullChecksC :: [Content i] -> [MethodContractApplication]
 getNotFulfilledNullChecksC []                                   = []
-getNotFulfilledNullChecksC ((CElem (Elem name _ content) _):xs) = 
+getNotFulfilledNullChecksC ((CElem (Elem name _ content) _):xs) =
   if (getFromQN name == "notFulfilledNullChecks")
   then getMethodContractApplication content ++ getNotFulfilledNullChecksC xs
   else getNotFulfilledNullChecksC xs
@@ -135,14 +145,14 @@ getNotFulfilledNullChecksC (_:xs)                               = getNotFulfille
 
 
 getNotInitValidLoopInvs :: Content i -> [MethodContractApplication]
-getNotInitValidLoopInvs (CElem (Elem name _ content) _) = 
+getNotInitValidLoopInvs (CElem (Elem name _ content) _) =
   if (getFromQN name == "executionPath")
   then getNotInitValidLoopInvsC content
   else []
 
 getNotInitValidLoopInvsC :: [Content i] -> [MethodContractApplication]
 getNotInitValidLoopInvsC []                                   = []
-getNotInitValidLoopInvsC ((CElem (Elem name _ content) _):xs) = 
+getNotInitValidLoopInvsC ((CElem (Elem name _ content) _):xs) =
   if (getFromQN name == "notInitiallyValidLoopInvariants")
   then getMethodContractApplication content ++ getNotInitValidLoopInvsC xs
   else getNotInitValidLoopInvsC xs
@@ -150,14 +160,14 @@ getNotInitValidLoopInvsC (_:xs)                               = getNotInitValidL
 
 
 getNotPreservedLoopInvs :: Content i -> [MethodContractApplication]
-getNotPreservedLoopInvs (CElem (Elem name _ content) _) = 
+getNotPreservedLoopInvs (CElem (Elem name _ content) _) =
   if (getFromQN name == "executionPath")
   then getNotPreservedLoopInvsC content
   else []
 
 getNotPreservedLoopInvsC :: [Content i] -> [MethodContractApplication]
 getNotPreservedLoopInvsC []                                   = []
-getNotPreservedLoopInvsC ((CElem (Elem name _ content) _):xs) = 
+getNotPreservedLoopInvsC ((CElem (Elem name _ content) _):xs) =
   if (getFromQN name == "notInitiallyValidLoopInvariants")
   then getMethodContractApplication content ++ getNotPreservedLoopInvsC xs
   else getNotPreservedLoopInvsC xs
@@ -175,11 +185,11 @@ getMethodContractApplication (_:xs)                                  = getMethod
 
 
 getMCA :: [Attribute] -> MethodContractApplication
-getMCA xs = 
+getMCA xs =
  MCA { fileMCA     = lookForVal "file" xs
      , startLine   = lookForVal "startLine" xs
      , startColumn = lookForVal "startColumn" xs
-     , endLine     = lookForVal "endLine" xs 
+     , endLine     = lookForVal "endLine" xs
      , endColumn   = lookForVal "endColumn" xs
      , methodMCA   = lookForVal "method" xs
      , contractMCA = lookForVal "contract" xs
@@ -191,14 +201,14 @@ getMCA xs =
 
 lookForVal :: String -> [Attribute] -> String
 lookForVal s []             = ""
-lookForVal s ((an, ref):as) = if (getFromQN an == s) 
+lookForVal s ((an, ref):as) = if (getFromQN an == s)
                               then show ref
                               else lookForVal s as
 
 type MCAL = [MethodContractApplication]
 
 makeEPath :: (String, String, String, String, MCAL, MCAL, MCAL, MCAL) -> EPath
-makeEPath (pcond, pverif, newpres, tkind, nfpres, nfchecks, initLoop, preserLoop) = 
+makeEPath (pcond, pverif, newpres, tkind, nfpres, nfchecks, initLoop, preserLoop) =
  EPath pcond pverif newpres tkind nfpres nfchecks initLoop preserLoop
 
 zip8 :: [a] -> [b] -> [c] -> [d] -> [e] -> [f] -> [g] -> [h] -> [(a,b,c,d,e,f,g,h)]

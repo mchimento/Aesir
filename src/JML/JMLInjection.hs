@@ -38,8 +38,7 @@ annotateInitTmpFiles i output_add jinfo ys =
      let file         = output_add' ++ "/" ++ (cl ++ ".java")
      r <- readFile file
      let cinvs      = generateTmpFileCInv cl ys r
-     let nullable   = updateTmpFileCInv cl jinfo cinvs
-     let specPublic = updateSpecPublic cl jinfo nullable
+     let specPublic = updateSpecPublic cl jinfo cinvs
      rnf specPublic `seq` (writeFile file specPublic)
      --use of rnf [s] `seq` [...] to force reading the content of the
      --file and close it
@@ -159,10 +158,10 @@ updateSpecPublic cl jinfo r =
 searchAndAnnotateVarsSP :: [String] -> [(String, String, String)] -> [String]
 searchAndAnnotateVarsSP xss []     = xss
 searchAndAnnotateVarsSP xss (ys:yss) =
- if not (ys ^._1 == "private")
- then searchAndAnnotateVarsSP xss yss
- else let xss' = annotateSpecPublic ys xss
+ if (ys ^._1 == "private" || ys ^._1 == "protected")
+ then let xss' = annotateSpecPublic ys xss
       in searchAndAnnotateVarsSP xss' yss
+ else searchAndAnnotateVarsSP xss yss
 
 annotateSpecPublic :: (String,String, String) -> [String] -> [String]
 annotateSpecPublic (mod,t,v) []       = []
@@ -177,10 +176,10 @@ annotateSpecPublic (mod,t,v) (xs:xss) =
 searchAndAnnotateMethods :: [String] -> [(String, String, String)] -> [String]
 searchAndAnnotateMethods xss []     = xss
 searchAndAnnotateMethods xss (ys:yss) =
- if not (ys ^._3 == "private")
- then searchAndAnnotateMethods xss yss
- else let xss' = annotateSpecPublicM ys xss
+ if (ys ^._3 == "private" || ys ^._3 == "protected")
+ then let xss' = annotateSpecPublicM ys xss
       in searchAndAnnotateMethods xss' yss
+ else searchAndAnnotateMethods xss yss
 
 annotateSpecPublicM :: (String,String, String) -> [String] -> [String]
 annotateSpecPublicM (t,v,mod) []       = []
@@ -276,7 +275,7 @@ getCInvs' ((cl', cinvs):xs) cl = if (cl' == cl)
 
 generateDBMFile :: String -> [(ClassInfo, [HTName])] -> String -> String
 generateDBMFile cl xs r =
- let dummy_vars = map (genDummyVarJava "true") $ lookForConstsNames cl xs
+ let dummy_vars = map (\xs -> genDummyVarJava "true" xs ++ "\n") $ lookForConstsNames cl xs
      (ys, zs)   = lookForClassBeginning cl (lines r)
  in (unlines ys) ++ concat dummy_vars ++ (unlines zs)
 

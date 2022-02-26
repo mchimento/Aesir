@@ -1,5 +1,8 @@
 IMPORTS {
 import transactionsystem.UserInfo ;
+import transactionsystem.ArraySessions ;
+import transactionsystem.ArrayAccounts ;
+import transactionsystem.UserAccount ;
 }
 
 MODEL {
@@ -19,10 +22,18 @@ NORMAL { login (init) ; }
 }
 
 TRANSITIONS {
-logout -> login [ true \ openSession \ true \ skip ; ]
-login -> logout [ true \ closeSession \ true \ skip ; ]
-login -> login  [ amount > 0 \ depositTo \ true \ skip ; ]
-login -> login  [ amount > 0 \ withdrawFrom \ true \ skip ; ]
+logout -> login [ \invariant_for(sessions)
+                  && (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) 
+                | openSession | true | skip ; ]
+login -> logout [ \invariant_for(sessions) 
+                  && (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) 
+                | closeSession | true | skip ; ]
+login -> login  [ amount > 0 && accounts.set != null && \invariant_for(accounts)
+                  && (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) 
+                | depositTo | true | skip ; ]
+login -> login  [ amount > 0 && accounts.set != null && \invariant_for(accounts)
+                  && (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) 
+                | withdrawFrom | true | skip ; ]
 }
 
 } %%end of PROPERTY
@@ -30,7 +41,21 @@ login -> login  [ amount > 0 \ withdrawFrom \ true \ skip ; ]
 } %% end of MODEL
 
 CINVARIANTS {
- UserInfo { (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) }
+ ArraySessions { set.length == Max_Sessions && set != null }
+ ArraySessions { \typeof(set) == \type(Object[]) }
+ ArraySessions { size >= 0 && size <= Max_Sessions }
+ ArraySessions { (\forall int i ; i >= 0 && i < size ; set[i] != null) }
+ ArrayAccounts { set.length == Max_Accounts && set != null }
+ ArrayAccounts { \typeof(set) == \type(Object[]) }
+ ArrayAccounts { size >= 0 && size <= Max_Accounts }
+ ArrayAccounts { (\forall int i ; i >= 0 && i < size ; set[i] != null) }
+ UserAccount { balance >= 0 }
+}
+
+ASSIGNABLES {
+ UserAccount.withdraw { balance }
+ ArrayAccounts.getAccount { NOTHING }
+ ArraySessions.getSession { NOTHING } 
 }
 
 INITPROP init { (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) }
