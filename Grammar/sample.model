@@ -51,6 +51,11 @@ HashTable {size >= 0 && size <= capacity}
 HashTable {capacity >= 1}
 }
 
+ASSIGNABLES {
+HashTable.add { tot }
+HashTable.mem { tot, hyt, r }
+}
+
 INITPROP deposit_ok { size < capacity && key > 0 }
 
 METHODS {

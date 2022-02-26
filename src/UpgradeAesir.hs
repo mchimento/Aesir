@@ -25,12 +25,13 @@ import Java.JavaLanguage
 
 
 upgradeModel :: Abs.AbsModel -> UpgradeModel CModel
-upgradeModel (Abs.AbsModel imports model temps cinvs consts methods) =
- chainExec (imports, model, temps, cinvs, consts, methods) (CModel [] nilModel TempNil [] (IProp "" "") []) emptyEnv [] 1
-          where nilModel = undefined --Hack. This should not affect the execution of the tool.
+upgradeModel (Abs.AbsModel imports model temps cinvs ass consts methods) =
+ chainExec (imports, model, temps, cinvs, ass, consts, methods)
+           (CModel [] nilModel TempNil [] (TAssignables []) (IProp "" "") []) emptyEnv [] 1
+            where nilModel = undefined --Hack. This should not affect the execution of the tool.
 
-chainExec :: (Abs.Imports, Abs.Model, Abs.Templates, Abs.CInvariants, Abs.IProp, Abs.Methods) -> CModel -> Env -> [String] -> Int -> UpgradeModel CModel
-chainExec modelp model env errs 6 =
+chainExec :: (Abs.Imports, Abs.Model, Abs.Templates, Abs.CInvariants, Abs.Assignables, Abs.IProp, Abs.Methods) -> CModel -> Env -> [String] -> Int -> UpgradeModel CModel
+chainExec modelp model env errs 7 =
  if null errs
  then do put env
          return model
@@ -38,13 +39,13 @@ chainExec modelp model env errs 6 =
 chainExec modelp model env errs n =
  case n of
       1 -> let model'  = importsGet .~ genImports (modelp ^. _1) $ model
-               model'' = methodsGet .~ genMethods (modelp ^. _6) $ model'
+               model'' = methodsGet .~ genMethods (modelp ^. _7) $ model'
            in let imps  = model' ^. importsGet
                   imps' = getDuplicates imps
               in if (null imps')
                  then chainExec modelp model'' env errs 2
                  else chainExec modelp model'' env (errs ++ (duplicateImps imps')) 2
-      2 -> case runWriter (genIProp (modelp ^. _5)) of
+      2 -> case runWriter (genIProp (modelp ^. _6)) of
                 (iprop', [])  -> let ip = ipropID %~ (\id -> getIdIprop iprop') $ (initprop env)
                                  in chainExec modelp (initpropGet .~ iprop' $ model) (env { initprop = ip}) errs 3
                 (iprop', err) -> let ip = ipropID %~ (\id -> getIdIprop iprop') $ (initprop env)
@@ -58,6 +59,9 @@ chainExec modelp model env errs n =
       5 -> case runStateT (genClassInvariants (modelp ^. _4)) env of
                 Bad s            -> chainExec modelp model env (s:errs) 6
                 Ok (cinvs',env') -> chainExec modelp (cinvariantsGet .~ cinvs' $ model) env' errs 6
+      6 -> case runStateT (genAssignables (modelp ^. _5)) env of
+                Bad s          -> chainExec modelp model env (s:errs) 7
+                Ok (ass',env') -> chainExec modelp (assignableGet .~ ass' $ model) env' errs 7
 
 -------------
 -- Imports --
@@ -929,7 +933,6 @@ checkMethodNames targs minfs =
     else writer (False, "Error: In an action create, the method(s) ["
                         ++ addComma [ x | x <- map showActArgs targs, not (elem x xs)] ++ "] do(es) not exist.\n")
 
-
 -----------------
 -- CInvariants --
 -----------------
@@ -952,6 +955,24 @@ getCInv (Abs.CI cn jml) =
                   then return $ CI (getIdAbs cn) jml'
                   else do tell $ "Error: Parse on error on class invariant [" ++ printTree jml ++ "] for the class " ++ getIdAbs cn ++ ".\n"
                           return CInvNil
+
+-----------------
+-- Assignables --
+-----------------
+
+genAssignables :: Abs.Assignables -> UpgradeModel TAssignables
+genAssignables absass =
+ case runWriter (genAssignables' absass) of
+      (ass,s) -> if null s
+                 then return ass
+                 else fail s
+
+genAssignables' :: Abs.Assignables -> Writer String TAssignables
+genAssignables' Abs.AssNil            = return (TAssignables [])
+genAssignables' (Abs.Assignables ass) = return $ TAssignables $ map getAss ass
+
+getAss :: Abs.Assignable -> Ass
+getAss (Abs.Ass cl m ass) = Ass (getIdAbs cl) (getIdAbs m) (map getIdAbs ass)
 
 -------------
 -- Methods --

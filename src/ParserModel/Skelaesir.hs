@@ -17,7 +17,7 @@ transSymbols x = case x of
   Symbols string -> failure x
 transAbsModel :: AbsModel -> Result
 transAbsModel x = case x of
-  AbsModel imports model templates cinvariants iprop methods -> failure x
+  AbsModel imports model templates cinvariants assignables iprop methods -> failure x
 transImports :: Imports -> Result
 transImports x = case x of
   Imports imports -> failure x
@@ -174,6 +174,13 @@ transCInvariants x = case x of
 transCInvariant :: CInvariant -> Result
 transCInvariant x = case x of
   CI id jml -> failure x
+transAssignables :: Assignables -> Result
+transAssignables x = case x of
+  Assignables assignables -> failure x
+  AssNil -> failure x
+transAssignable :: Assignable -> Result
+transAssignable x = case x of
+  Ass id1 id2 ids -> failure x
 transIProp :: IProp -> Result
 transIProp x = case x of
   IProp id jml -> failure x

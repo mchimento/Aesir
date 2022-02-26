@@ -3123,7 +3123,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "STARTING" 21 (b "ACTEVENTS" 11 (b "." 6 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "->" 5 (b "," 4 N N) N)) (b "=" 9 (b ";" 8 (b "/" 7 N N) N) (b "ACCEPTING" 10 N N))) (b "INITPROP" 16 (b "FOREACH" 14 (b "CINVARIANTS" 13 (b "BAD" 12 N N) N) (b "IMPORTS" 15 N N)) (b "NORMAL" 19 (b "MODEL" 18 (b "METHODS" 17 N N) N) (b "PROPERTY" 20 N N)))) (b "entry" 32 (b "VARIABLES" 27 (b "TEMPLATES" 24 (b "TEMPLATE" 23 (b "STATES" 22 N N) N) (b "TRIGGERS" 26 (b "TRANSITIONS" 25 N N) N)) (b "]" 30 (b "\\" 29 (b "[" 28 N N) N) (b "call" 31 N N))) (b "where" 37 (b "final" 35 (b "exit" 34 (b "execution" 33 N N) N) (b "import" 36 N N)) (b "||" 40 (b "|" 39 (b "{" 38 N N) N) (b "}" 41 N N))))
+resWords = b "STARTING" 22 (b "ACTEVENTS" 11 (b "." 6 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "->" 5 (b "," 4 N N) N)) (b "=" 9 (b ";" 8 (b "/" 7 N N) N) (b "ACCEPTING" 10 N N))) (b "INITPROP" 17 (b "CINVARIANTS" 14 (b "BAD" 13 (b "ASSIGNABLES" 12 N N) N) (b "IMPORTS" 16 (b "FOREACH" 15 N N) N)) (b "NORMAL" 20 (b "MODEL" 19 (b "METHODS" 18 N N) N) (b "PROPERTY" 21 N N)))) (b "entry" 33 (b "VARIABLES" 28 (b "TEMPLATES" 25 (b "TEMPLATE" 24 (b "STATES" 23 N N) N) (b "TRIGGERS" 27 (b "TRANSITIONS" 26 N N) N)) (b "]" 31 (b "\\" 30 (b "[" 29 N N) N) (b "call" 32 N N))) (b "where" 38 (b "final" 36 (b "exit" 35 (b "execution" 34 N N) N) (b "import" 37 N N)) (b "||" 41 (b "|" 40 (b "{" 39 N N) N) (b "}" 42 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 
@@ -3205,12 +3205,12 @@ utf8Encode = map fromIntegral . go . ord
                         , 0x80 + oc Data.Bits..&. 0x3f
                         ]
 
-alex_action_2 =  tok (\p s -> PT p (eitherResIdent (TV . share) s)) 
-alex_action_3 =  tok (\p s -> PT p (eitherResIdent (T_Id . share) s)) 
-alex_action_4 =  tok (\p s -> PT p (eitherResIdent (T_Symbols . share) s)) 
-alex_action_5 =  tok (\p s -> PT p (eitherResIdent (TV . share) s)) 
-alex_action_6 =  tok (\p s -> PT p (TI $ share s))    
-alex_action_7 =  tok (\p s -> PT p (TD $ share s)) 
+alex_action_2 =  tok (\p s -> PT p (eitherResIdent (TV . share) s))
+alex_action_3 =  tok (\p s -> PT p (eitherResIdent (T_Id . share) s))
+alex_action_4 =  tok (\p s -> PT p (eitherResIdent (T_Symbols . share) s))
+alex_action_5 =  tok (\p s -> PT p (eitherResIdent (TV . share) s))
+alex_action_6 =  tok (\p s -> PT p (TI $ share s))
+alex_action_7 =  tok (\p s -> PT p (TD $ share s))
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE
@@ -3447,4 +3447,3 @@ alexRightContext (sc) user__ _ _ input__ =
         -- TODO: there's no need to find the longest
         -- match when checking the right context, just
         -- the first match will do.
-

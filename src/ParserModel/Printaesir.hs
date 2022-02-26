@@ -30,7 +30,7 @@ render d = rend 0 (map ($ "") $ d []) "" where
     t:"+":"+":ts -> showString t . showChar '+' . space "+" . rend i ts
     t:"-":"-":ts -> showString t . showChar '-' . space "-" . rend i ts
     t: "%"   :ts -> space t . showChar '%' . rend i ts
-    t: "."   :ts -> showString t . showChar '.' . rend i ts 
+    t: "."   :ts -> showString t . showChar '.' . rend i ts
     t:":":":":ts -> showString t . showChar ':' . showChar ':' . rend i ts
     "=":"=":">":ts -> showString "==" . space ">" . rend i ts
     "=" :"=" :ts -> showChar '=' . space "=" . rend i ts
@@ -51,8 +51,8 @@ render d = rend 0 (map ($ "") $ d []) "" where
     t  : ")" :ts -> showString t . showString ") " . rend i ts
     t  : "]" :ts -> showString t . showChar ']' . rend i ts
     "\""     :ts -> showChar '\"' . rend i ts
-    t  :"\"" :ts -> if (t == " ") then showChar '\"' . rend i ts 
-                                  else showString t . showChar '\"' . rend i ts 
+    t  :"\"" :ts -> if (t == " ") then showChar '\"' . rend i ts
+                                  else showString t . showChar '\"' . rend i ts
     t        :ts -> space t . rend i ts
     _            -> id
   new i   = showChar '\n' . replicateS (2*i) (showChar ' ') . dropWhile isSpace
@@ -73,15 +73,15 @@ replicateS n f = concatS (replicate n f)
 -- the printer class does the job
 class Print a where
   prt :: Int -> a -> Doc
-  prtList :: [a] -> Doc
-  prtList = concatD . map (prt 0)
+  prtList :: Int -> [a] -> Doc
+  prtList i = concatD . map (prt i)
 
 instance Print a => Print [a] where
-  prt _ = prtList
+  prt = prtList
 
 instance Print Char where
   prt _ s = doc (showChar '\'' . mkEsc '\'' s . showChar '\'')
-  prtList s = doc (showChar '"' . concatS (map (mkEsc '"') s) . showChar '"')
+  prtList _ s = doc (showChar '"' . concatS (map (mkEsc '"') s) . showChar '"')
 
 mkEsc :: Char -> Char -> ShowS
 mkEsc q s = case s of
@@ -106,11 +106,9 @@ instance Print Double where
 
 instance Print Id where
   prt _ (Id i) = doc (showString ( i))
-  prtList es = case es of
-   [] -> (concatD [])
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
-
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 
 instance Print Symbols where
   prt _ (Symbols i) = doc (showString ( i))
@@ -119,441 +117,352 @@ instance Print Symbols where
 
 instance Print AbsModel where
   prt i e = case e of
-   AbsModel imports model templates cinvariants iprop methods -> prPrec i 0 (concatD [prt 0 imports , prt 0 model , prt 0 templates , prt 0 cinvariants , prt 0 iprop , prt 0 methods])
-
+    AbsModel imports model templates cinvariants assignables iprop methods -> prPrec i 0 (concatD [prt 0 imports, prt 0 model, prt 0 templates, prt 0 cinvariants, prt 0 assignables, prt 0 iprop, prt 0 methods])
 
 instance Print Imports where
   prt i e = case e of
-   Imports imports -> prPrec i 0 (concatD [doc (showString "IMPORTS") , doc (showString "{") , prt 0 imports , doc (showString "}")])
-   ImportsNil  -> prPrec i 0 (concatD [])
-
+    Imports imports -> prPrec i 0 (concatD [doc (showString "IMPORTS"), doc (showString "{"), prt 0 imports, doc (showString "}")])
+    ImportsNil -> prPrec i 0 (concatD [])
 
 instance Print Import where
   prt i e = case e of
-   Import javafiless -> prPrec i 0 (concatD [doc (showString "import") , prt 0 javafiless])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x , doc (showString ";")])
-   x:xs -> (concatD [prt 0 x , doc (showString ";") , prt 0 xs])
-
+    Import javafiless -> prPrec i 0 (concatD [doc (showString "import"), prt 0 javafiless])
+  prtList _ [x] = (concatD [prt 0 x, doc (showString ";")])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ";"), prt 0 xs])
 instance Print JavaFiles where
   prt i e = case e of
-   JavaFiles id -> prPrec i 0 (concatD [prt 0 id])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ".") , prt 0 xs])
-
+    JavaFiles id -> prPrec i 0 (concatD [prt 0 id])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "."), prt 0 xs])
 instance Print Model where
   prt i e = case e of
-   Model context -> prPrec i 0 (concatD [doc (showString "MODEL") , doc (showString "{") , prt 0 context , doc (showString "}")])
-
+    Model context -> prPrec i 0 (concatD [doc (showString "MODEL"), doc (showString "{"), prt 0 context, doc (showString "}")])
 
 instance Print Context where
   prt i e = case e of
-   Ctxt variables actevents triggers properties foreaches -> prPrec i 0 (concatD [prt 0 variables , prt 0 actevents , prt 0 triggers , prt 0 properties , prt 0 foreaches])
-
+    Ctxt variables actevents triggers properties foreaches -> prPrec i 0 (concatD [prt 0 variables, prt 0 actevents, prt 0 triggers, prt 0 properties, prt 0 foreaches])
 
 instance Print Variables where
   prt i e = case e of
-   VarNil  -> prPrec i 0 (concatD [])
-   VarDef variables -> prPrec i 0 (concatD [doc (showString "VARIABLES") , doc (showString "{") , prt 0 variables , doc (showString "}")])
-
+    VarNil -> prPrec i 0 (concatD [])
+    VarDef variables -> prPrec i 0 (concatD [doc (showString "VARIABLES"), doc (showString "{"), prt 0 variables, doc (showString "}")])
 
 instance Print Variable where
   prt i e = case e of
-   Var varmodifier type' vardecls -> prPrec i 0 (concatD [prt 0 varmodifier , prt 0 type' , prt 0 vardecls])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   x:xs -> (concatD [prt 0 x , doc (showString ";") , prt 0 xs])
-
+    Var varmodifier type_ vardecls -> prPrec i 0 (concatD [prt 0 varmodifier, prt 0 type_, prt 0 vardecls])
+  prtList _ [] = (concatD [])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ";"), prt 0 xs])
 instance Print VarModifier where
   prt i e = case e of
-   VarModifierFinal  -> prPrec i 0 (concatD [doc (showString "final")])
-   VarModifierNil  -> prPrec i 0 (concatD [])
-
+    VarModifierFinal -> prPrec i 0 (concatD [doc (showString "final")])
+    VarModifierNil -> prPrec i 0 (concatD [])
 
 instance Print ActEvents where
   prt i e = case e of
-   ActEventsNil  -> prPrec i 0 (concatD [])
-   ActEventsDef actevents -> prPrec i 0 (concatD [doc (showString "ACTEVENTS") , doc (showString "{") , prt 0 actevents , doc (showString "}")])
-
+    ActEventsNil -> prPrec i 0 (concatD [])
+    ActEventsDef actevents -> prPrec i 0 (concatD [doc (showString "ACTEVENTS"), doc (showString "{"), prt 0 actevents, doc (showString "}")])
 
 instance Print ActEvent where
   prt i e = case e of
-   ActEvent id -> prPrec i 0 (concatD [prt 0 id])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
-
+    ActEvent id -> prPrec i 0 (concatD [prt 0 id])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print Triggers where
   prt i e = case e of
-   TriggersNil  -> prPrec i 0 (concatD [])
-   TriggersDef triggers -> prPrec i 0 (concatD [doc (showString "TRIGGERS") , doc (showString "{") , prt 0 triggers , doc (showString "}")])
-
+    TriggersNil -> prPrec i 0 (concatD [])
+    TriggersDef triggers -> prPrec i 0 (concatD [doc (showString "TRIGGERS"), doc (showString "{"), prt 0 triggers, doc (showString "}")])
 
 instance Print Trigger where
   prt i e = case e of
-   Trigger id binds compoundtrigger whereclause -> prPrec i 0 (concatD [prt 0 id , doc (showString "(") , prt 0 binds , doc (showString ")") , doc (showString "=") , prt 0 compoundtrigger , prt 0 whereclause])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
-
+    Trigger id binds compoundtrigger whereclause -> prPrec i 0 (concatD [prt 0 id, doc (showString "("), prt 0 binds, doc (showString ")"), doc (showString "="), prt 0 compoundtrigger, prt 0 whereclause])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print CompoundTrigger where
   prt i e = case e of
-   Collection triggerlist -> prPrec i 0 (concatD [prt 0 triggerlist])
-   NormalEvent binding id varss triggervariation -> prPrec i 0 (concatD [doc (showString "{") , prt 0 binding , prt 0 id , doc (showString "(") , prt 0 varss , doc (showString ")") , prt 0 triggervariation , doc (showString "}")])
-   OnlyId id -> prPrec i 0 (concatD [doc (showString "{") , prt 0 id , doc (showString "}")])
-   OnlyIdPar id -> prPrec i 0 (concatD [doc (showString "{") , prt 0 id , doc (showString "(") , doc (showString ")") , doc (showString "}")])
-
+    Collection triggerlist -> prPrec i 0 (concatD [prt 0 triggerlist])
+    NormalEvent binding id varss triggervariation -> prPrec i 0 (concatD [doc (showString "{"), prt 0 binding, prt 0 id, doc (showString "("), prt 0 varss, doc (showString ")"), prt 0 triggervariation, doc (showString "}")])
+    OnlyId id -> prPrec i 0 (concatD [doc (showString "{"), prt 0 id, doc (showString "}")])
+    OnlyIdPar id -> prPrec i 0 (concatD [doc (showString "{"), prt 0 id, doc (showString "("), doc (showString ")"), doc (showString "}")])
 
 instance Print TriggerList where
   prt i e = case e of
-   CECollection ceelements whereclause -> prPrec i 0 (concatD [doc (showString "{") , prt 0 ceelements , doc (showString "}") , prt 0 whereclause])
-
+    CECollection ceelements whereclause -> prPrec i 0 (concatD [doc (showString "{"), prt 0 ceelements, doc (showString "}"), prt 0 whereclause])
 
 instance Print CEElement where
   prt i e = case e of
-   CEct compoundtrigger -> prPrec i 0 (concatD [prt 0 compoundtrigger])
-   CEid id -> prPrec i 0 (concatD [prt 0 id])
-   CEidpar id -> prPrec i 0 (concatD [prt 0 id , doc (showString "(") , doc (showString ")")])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString "|") , prt 0 xs])
-
+    CEct compoundtrigger -> prPrec i 0 (concatD [prt 0 compoundtrigger])
+    CEid id -> prPrec i 0 (concatD [prt 0 id])
+    CEidpar id -> prPrec i 0 (concatD [prt 0 id, doc (showString "("), doc (showString ")")])
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString "|"), prt 0 xs])
 instance Print TriggerVariation where
   prt i e = case e of
-   EVENil  -> prPrec i 0 (concatD [])
-   EVEntry  -> prPrec i 0 (concatD [doc (showString "entry")])
-   EVExit varss -> prPrec i 0 (concatD [doc (showString "exit") , doc (showString "(") , prt 0 varss , doc (showString ")")])
-
+    EVENil -> prPrec i 0 (concatD [])
+    EVEntry -> prPrec i 0 (concatD [doc (showString "entry")])
+    EVExit varss -> prPrec i 0 (concatD [doc (showString "exit"), doc (showString "("), prt 0 varss, doc (showString ")")])
 
 instance Print Binding where
   prt i e = case e of
-   BindingVar bind -> prPrec i 0 (concatD [prt 0 bind , doc (showString ".")])
-
+    BindingVar bind -> prPrec i 0 (concatD [prt 0 bind, doc (showString ".")])
 
 instance Print Bind where
   prt i e = case e of
-   BindStar  -> prPrec i 0 (concatD [doc (showString "*")])
-   BindType type' id -> prPrec i 0 (concatD [prt 0 type' , prt 0 id])
-   BindId id -> prPrec i 0 (concatD [prt 0 id])
-   BindStarExec  -> prPrec i 0 (concatD [doc (showString "execution") , doc (showString "*")])
-   BindStarCall  -> prPrec i 0 (concatD [doc (showString "call") , doc (showString "*")])
-   BindTypeExec type' id -> prPrec i 0 (concatD [doc (showString "execution") , prt 0 type' , prt 0 id])
-   BindTypeCall type' id -> prPrec i 0 (concatD [doc (showString "call") , prt 0 type' , prt 0 id])
-   BindIdExec id -> prPrec i 0 (concatD [doc (showString "execution") , prt 0 id])
-   BindIdCall id -> prPrec i 0 (concatD [doc (showString "call") , prt 0 id])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
-
+    BindStar -> prPrec i 0 (concatD [doc (showString "*")])
+    BindType type_ id -> prPrec i 0 (concatD [prt 0 type_, prt 0 id])
+    BindId id -> prPrec i 0 (concatD [prt 0 id])
+    BindStarExec -> prPrec i 0 (concatD [doc (showString "execution"), doc (showString "*")])
+    BindStarCall -> prPrec i 0 (concatD [doc (showString "call"), doc (showString "*")])
+    BindTypeExec type_ id -> prPrec i 0 (concatD [doc (showString "execution"), prt 0 type_, prt 0 id])
+    BindTypeCall type_ id -> prPrec i 0 (concatD [doc (showString "call"), prt 0 type_, prt 0 id])
+    BindIdExec id -> prPrec i 0 (concatD [doc (showString "execution"), prt 0 id])
+    BindIdCall id -> prPrec i 0 (concatD [doc (showString "call"), prt 0 id])
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print WhereClause where
   prt i e = case e of
-   WhereClauseNil  -> prPrec i 0 (concatD [])
-   WhereClauseDef whereexps -> prPrec i 0 (concatD [doc (showString "where") , doc (showString "{") , prt 0 whereexps , doc (showString "}")])
-
+    WhereClauseNil -> prPrec i 0 (concatD [])
+    WhereClauseDef whereexps -> prPrec i 0 (concatD [doc (showString "where"), doc (showString "{"), prt 0 whereexps, doc (showString "}")])
 
 instance Print WhereExp where
   prt i e = case e of
-   WhereExp bind varexp -> prPrec i 0 (concatD [prt 0 bind , doc (showString "=") , prt 0 varexp])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x , doc (showString ";")])
-   x:xs -> (concatD [prt 0 x , doc (showString ";") , prt 0 xs])
-
+    WhereExp bind varexp -> prPrec i 0 (concatD [prt 0 bind, doc (showString "="), prt 0 varexp])
+  prtList _ [x] = (concatD [prt 0 x, doc (showString ";")])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ";"), prt 0 xs])
 instance Print Vars where
   prt i e = case e of
-   Vars bind -> prPrec i 0 (concatD [prt 0 bind])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
-
+    Vars bind -> prPrec i 0 (concatD [prt 0 bind])
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print Properties where
   prt i e = case e of
-   PropertiesNil  -> prPrec i 0 (concatD [])
-   ProperiesDef id propkind properties -> prPrec i 0 (concatD [doc (showString "PROPERTY") , prt 0 id , doc (showString "{") , prt 0 propkind , doc (showString "}") , prt 0 properties])
-
+    PropertiesNil -> prPrec i 0 (concatD [])
+    ProperiesDef id propkind properties -> prPrec i 0 (concatD [doc (showString "PROPERTY"), prt 0 id, doc (showString "{"), prt 0 propkind, doc (showString "}"), prt 0 properties])
 
 instance Print PropKind where
   prt i e = case e of
-   PropKindNormal states transitions -> prPrec i 0 (concatD [prt 0 states , prt 0 transitions])
-
+    PropKindNormal states transitions -> prPrec i 0 (concatD [prt 0 states, prt 0 transitions])
 
 instance Print States where
   prt i e = case e of
-   States starting accepting bad normal -> prPrec i 0 (concatD [doc (showString "STATES") , doc (showString "{") , prt 0 starting , prt 0 accepting , prt 0 bad , prt 0 normal , doc (showString "}")])
-
+    States starting accepting bad normal -> prPrec i 0 (concatD [doc (showString "STATES"), doc (showString "{"), prt 0 starting, prt 0 accepting, prt 0 bad, prt 0 normal, doc (showString "}")])
 
 instance Print Accepting where
   prt i e = case e of
-   AcceptingNil  -> prPrec i 0 (concatD [])
-   AcceptingDef states -> prPrec i 0 (concatD [doc (showString "ACCEPTING") , doc (showString "{") , prt 0 states , doc (showString "}")])
-
+    AcceptingNil -> prPrec i 0 (concatD [])
+    AcceptingDef states -> prPrec i 0 (concatD [doc (showString "ACCEPTING"), doc (showString "{"), prt 0 states, doc (showString "}")])
 
 instance Print Bad where
   prt i e = case e of
-   BadNil  -> prPrec i 0 (concatD [])
-   BadDef states -> prPrec i 0 (concatD [doc (showString "BAD") , doc (showString "{") , prt 0 states , doc (showString "}")])
-
+    BadNil -> prPrec i 0 (concatD [])
+    BadDef states -> prPrec i 0 (concatD [doc (showString "BAD"), doc (showString "{"), prt 0 states, doc (showString "}")])
 
 instance Print Normal where
   prt i e = case e of
-   NormalNil  -> prPrec i 0 (concatD [])
-   NormalDef states -> prPrec i 0 (concatD [doc (showString "NORMAL") , doc (showString "{") , prt 0 states , doc (showString "}")])
-
+    NormalNil -> prPrec i 0 (concatD [])
+    NormalDef states -> prPrec i 0 (concatD [doc (showString "NORMAL"), doc (showString "{"), prt 0 states, doc (showString "}")])
 
 instance Print Starting where
   prt i e = case e of
-   StartingDef states -> prPrec i 0 (concatD [doc (showString "STARTING") , doc (showString "{") , prt 0 states , doc (showString "}")])
-
+    StartingDef states -> prPrec i 0 (concatD [doc (showString "STARTING"), doc (showString "{"), prt 0 states, doc (showString "}")])
 
 instance Print State where
   prt i e = case e of
-   State namestate initialcode htnames -> prPrec i 0 (concatD [prt 0 namestate , prt 0 initialcode , prt 0 htnames])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   x:xs -> (concatD [prt 0 x , doc (showString ";") , prt 0 xs])
-
+    State namestate initialcode htnames -> prPrec i 0 (concatD [prt 0 namestate, prt 0 initialcode, prt 0 htnames])
+  prtList _ [] = (concatD [])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ";"), prt 0 xs])
 instance Print NameState where
   prt i e = case e of
-   NameState id -> prPrec i 0 (concatD [prt 0 id])
-
+    NameState id -> prPrec i 0 (concatD [prt 0 id])
 
 instance Print HTNames where
   prt i e = case e of
-   CNS htnames -> prPrec i 0 (concatD [doc (showString "(") , prt 0 htnames , doc (showString ")")])
-   CNSNil  -> prPrec i 0 (concatD [])
-
+    CNS htnames -> prPrec i 0 (concatD [doc (showString "("), prt 0 htnames, doc (showString ")")])
+    CNSNil -> prPrec i 0 (concatD [])
 
 instance Print HTName where
   prt i e = case e of
-   CN id -> prPrec i 0 (concatD [prt 0 id])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
-
+    CN id -> prPrec i 0 (concatD [prt 0 id])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print InitialCode where
   prt i e = case e of
-   InitNil  -> prPrec i 0 (concatD [])
-   InitProg java -> prPrec i 0 (concatD [doc (showString "{") , prt 0 java , doc (showString "}")])
-
+    InitNil -> prPrec i 0 (concatD [])
+    InitProg java -> prPrec i 0 (concatD [doc (showString "{"), prt 0 java, doc (showString "}")])
 
 instance Print Transitions where
   prt i e = case e of
-   Transitions transitions -> prPrec i 0 (concatD [doc (showString "TRANSITIONS") , doc (showString "{") , prt 0 transitions , doc (showString "}")])
-
+    Transitions transitions -> prPrec i 0 (concatD [doc (showString "TRANSITIONS"), doc (showString "{"), prt 0 transitions, doc (showString "}")])
 
 instance Print Transition where
   prt i e = case e of
-   Transition namestate0 namestate condexp1 id condexp actions -> prPrec i 0 (concatD [prt 0 namestate0 , doc (showString "->") , prt 0 namestate , doc (showString "[") , prt 0 condexp1 , doc (showString "\\") , prt 0 id , doc (showString "\\") , prt 0 condexp , doc (showString "\\") , prt 0 actions , doc (showString "]")])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
-
+    Transition namestate1 namestate2 jml1 id jml2 actions -> prPrec i 0 (concatD [prt 0 namestate1, doc (showString "->"), prt 0 namestate2, doc (showString "["), prt 0 jml1, doc (showString "|"), prt 0 id, doc (showString "|"), prt 0 jml2, doc (showString "|"), prt 0 actions, doc (showString "]")])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print Action where
   prt i e = case e of
-   Act condexp -> prPrec i 0 (concatD [prt 0 condexp])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x , doc (showString ";")])
-   x:xs -> (concatD [prt 0 x , doc (showString ";") , prt 0 xs])
-
+    Act condexp -> prPrec i 0 (concatD [prt 0 condexp])
+  prtList _ [x] = (concatD [prt 0 x, doc (showString ";")])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ";"), prt 0 xs])
 instance Print Foreaches where
   prt i e = case e of
-   ForeachesNil  -> prPrec i 0 (concatD [])
-   ForeachesDef argss context foreaches -> prPrec i 0 (concatD [doc (showString "FOREACH") , doc (showString "(") , prt 0 argss , doc (showString ")") , doc (showString "{") , prt 0 context , doc (showString "}") , prt 0 foreaches])
-
+    ForeachesNil -> prPrec i 0 (concatD [])
+    ForeachesDef argss context foreaches -> prPrec i 0 (concatD [doc (showString "FOREACH"), doc (showString "("), prt 0 argss, doc (showString ")"), doc (showString "{"), prt 0 context, doc (showString "}"), prt 0 foreaches])
 
 instance Print Templates where
   prt i e = case e of
-   Temps templates -> prPrec i 0 (concatD [doc (showString "TEMPLATES") , doc (showString "{") , prt 0 templates , doc (showString "}")])
-   TempsNil  -> prPrec i 0 (concatD [])
-
+    Temps templates -> prPrec i 0 (concatD [doc (showString "TEMPLATES"), doc (showString "{"), prt 0 templates, doc (showString "}")])
+    TempsNil -> prPrec i 0 (concatD [])
 
 instance Print Template where
   prt i e = case e of
-   Temp id argss bodytemp -> prPrec i 0 (concatD [doc (showString "TEMPLATE") , prt 0 id , doc (showString "(") , prt 0 argss , doc (showString ")") , doc (showString "{") , prt 0 bodytemp , doc (showString "}")])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
-
+    Temp id argss bodytemp -> prPrec i 0 (concatD [doc (showString "TEMPLATE"), prt 0 id, doc (showString "("), prt 0 argss, doc (showString ")"), doc (showString "{"), prt 0 bodytemp, doc (showString "}")])
+  prtList _ [] = (concatD [])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print BodyTemp where
   prt i e = case e of
-   Body variables actevents triggers properties -> prPrec i 0 (concatD [prt 0 variables , prt 0 actevents , prt 0 triggers , prt 0 properties])
-
+    Body variables actevents triggers properties -> prPrec i 0 (concatD [prt 0 variables, prt 0 actevents, prt 0 triggers, prt 0 properties])
 
 instance Print CInvariants where
   prt i e = case e of
-   CInvariants cinvariants -> prPrec i 0 (concatD [doc (showString "CINVARIANTS") , doc (showString "{") , prt 0 cinvariants , doc (showString "}")])
-   CInvempty  -> prPrec i 0 (concatD [])
-
+    CInvariants cinvariants -> prPrec i 0 (concatD [doc (showString "CINVARIANTS"), doc (showString "{"), prt 0 cinvariants, doc (showString "}")])
+    CInvempty -> prPrec i 0 (concatD [])
 
 instance Print CInvariant where
   prt i e = case e of
-   CI id jml -> prPrec i 0 (concatD [prt 0 id , doc (showString "{") , prt 0 jml , doc (showString "}")])
+    CI id jml -> prPrec i 0 (concatD [prt 0 id, doc (showString "{"), prt 0 jml, doc (showString "}")])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
+instance Print Assignables where
+  prt i e = case e of
+    Assignables assignables -> prPrec i 0 (concatD [doc (showString "ASSIGNABLES"), doc (showString "{"), prt 0 assignables, doc (showString "}")])
+    AssNil -> prPrec i 0 (concatD [])
 
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
-
+instance Print Assignable where
+  prt i e = case e of
+    Ass id1 id2 ids -> prPrec i 0 (concatD [prt 0 id1, doc (showString "."), prt 0 id2, doc (showString "{"), prt 0 ids, doc (showString "}")])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print IProp where
   prt i e = case e of
-   IProp id jml -> prPrec i 0 (concatD [doc (showString "INITPROP") , prt 0 id , doc (showString "{") , prt 0 jml , doc (showString "}")])
-
+    IProp id jml -> prPrec i 0 (concatD [doc (showString "INITPROP"), prt 0 id, doc (showString "{"), prt 0 jml, doc (showString "}")])
 
 instance Print Methods where
   prt i e = case e of
-   Methods bodymethods -> prPrec i 0 (concatD [doc (showString "METHODS") , doc (showString "{") , prt 0 bodymethods , doc (showString "}")])
-   MethodsNil  -> prPrec i 0 (concatD [])
-
+    Methods bodymethods -> prPrec i 0 (concatD [doc (showString "METHODS"), doc (showString "{"), prt 0 bodymethods, doc (showString "}")])
+    MethodsNil -> prPrec i 0 (concatD [])
 
 instance Print BodyMethods where
   prt i e = case e of
-   BodyMemDecl memberdecls -> prPrec i 0 (concatD [prt 0 memberdecls])
-   BodyImport importfile -> prPrec i 0 (concatD [prt 0 importfile])
-
+    BodyMemDecl memberdecls -> prPrec i 0 (concatD [prt 0 memberdecls])
+    BodyImport importfile -> prPrec i 0 (concatD [prt 0 importfile])
 
 instance Print MemberDecl where
   prt i e = case e of
-   MemberDeclMethod type' id argss java -> prPrec i 0 (concatD [prt 0 type' , prt 0 id , doc (showString "(") , prt 0 argss , doc (showString ")") , doc (showString "{") , prt 0 java , doc (showString "}")])
-   MemberDeclField variabledecl -> prPrec i 0 (concatD [prt 0 variabledecl])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , prt 0 xs])
-
+    MemberDeclMethod type_ id argss java -> prPrec i 0 (concatD [prt 0 type_, prt 0 id, doc (showString "("), prt 0 argss, doc (showString ")"), doc (showString "{"), prt 0 java, doc (showString "}")])
+    MemberDeclField variabledecl -> prPrec i 0 (concatD [prt 0 variabledecl])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, prt 0 xs])
 instance Print VariableDecl where
   prt i e = case e of
-   VariableDecl type' vardecls -> prPrec i 0 (concatD [prt 0 type' , prt 0 vardecls , doc (showString ";")])
-
+    VariableDecl type_ vardecls -> prPrec i 0 (concatD [prt 0 type_, prt 0 vardecls, doc (showString ";")])
 
 instance Print VarDecl where
   prt i e = case e of
-   VarDecl id variableinitializer -> prPrec i 0 (concatD [prt 0 id , prt 0 variableinitializer])
-
-  prtList es = case es of
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
-
+    VarDecl id variableinitializer -> prPrec i 0 (concatD [prt 0 id, prt 0 variableinitializer])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print VariableInitializer where
   prt i e = case e of
-   VarInit varexp -> prPrec i 0 (concatD [doc (showString "=") , prt 0 varexp])
-   VarInitNil  -> prPrec i 0 (concatD [])
-
+    VarInit varexp -> prPrec i 0 (concatD [doc (showString "="), prt 0 varexp])
+    VarInitNil -> prPrec i 0 (concatD [])
 
 instance Print Type where
   prt i e = case e of
-   Type typedef -> prPrec i 0 (concatD [prt 0 typedef])
-
+    Type typedef -> prPrec i 0 (concatD [prt 0 typedef])
 
 instance Print TypeDef where
   prt i e = case e of
-   TypeDef id -> prPrec i 0 (concatD [prt 0 id])
-   TypeGen id symbols0 ids symbols -> prPrec i 0 (concatD [prt 0 id , prt 0 symbols0 , prt 0 ids , prt 0 symbols])
-   TypeArray id -> prPrec i 0 (concatD [prt 0 id , doc (showString "[") , doc (showString "]")])
-
+    TypeDef id -> prPrec i 0 (concatD [prt 0 id])
+    TypeGen id symbols1 ids symbols2 -> prPrec i 0 (concatD [prt 0 id, prt 0 symbols1, prt 0 ids, prt 0 symbols2])
+    TypeArray id -> prPrec i 0 (concatD [prt 0 id, doc (showString "["), doc (showString "]")])
 
 instance Print Args where
   prt i e = case e of
-   Args type' id -> prPrec i 0 (concatD [prt 0 type' , prt 0 id])
-
-  prtList es = case es of
-   [] -> (concatD [])
-   [x] -> (concatD [prt 0 x])
-   x:xs -> (concatD [prt 0 x , doc (showString ",") , prt 0 xs])
-
+    Args type_ id -> prPrec i 0 (concatD [prt 0 type_, prt 0 id])
+  prtList _ [] = (concatD [])
+  prtList _ [x] = (concatD [prt 0 x])
+  prtList _ (x:xs) = (concatD [prt 0 x, doc (showString ","), prt 0 xs])
 instance Print ImportFile where
   prt i e = case e of
-   ImportFile address -> prPrec i 0 (concatD [doc (showString "import") , prt 0 address , doc (showString ";")])
-
+    ImportFile address -> prPrec i 0 (concatD [doc (showString "import"), prt 0 address, doc (showString ";")])
 
 instance Print Address where
   prt i e = case e of
-   Address id add -> prPrec i 0 (concatD [prt 0 id , doc (showString "/") , prt 0 add])
-
+    Address id add -> prPrec i 0 (concatD [prt 0 id, doc (showString "/"), prt 0 add])
 
 instance Print Add where
   prt i e = case e of
-   AddBar id add -> prPrec i 0 (concatD [prt 0 id , doc (showString "/") , prt 0 add])
-   AddId id -> prPrec i 0 (concatD [prt 0 id])
-
+    AddBar id add -> prPrec i 0 (concatD [prt 0 id, doc (showString "/"), prt 0 add])
+    AddId id -> prPrec i 0 (concatD [prt 0 id])
 
 instance Print CondExp where
   prt i e = case e of
-   CondExpId id condexp -> prPrec i 0 (concatD [prt 0 id , prt 0 condexp])
-   CondExpSymb symbols condexp -> prPrec i 0 (concatD [prt 0 symbols , prt 0 condexp])
-   CondExpInt n condexp -> prPrec i 0 (concatD [prt 0 n , prt 0 condexp])
-   CondExpDouble d condexp -> prPrec i 0 (concatD [prt 0 d , prt 0 condexp])
-   CondExpTimes condexp -> prPrec i 0 (concatD [doc (showString "*") , prt 0 condexp])
-   CondExpParent condexp0 condexp -> prPrec i 0 (concatD [doc (showString "(") , prt 0 condexp0 , doc (showString ")") , prt 0 condexp])
-   CondExpDot condexp -> prPrec i 0 (concatD [doc (showString ".") , prt 0 condexp])
-   CondExpCorchete condexp0 condexp -> prPrec i 0 (concatD [doc (showString "[") , prt 0 condexp0 , doc (showString "]") , prt 0 condexp])
-   CondExpComma condexp -> prPrec i 0 (concatD [doc (showString ",") , prt 0 condexp])
-   CondExpSlash condexp -> prPrec i 0 (concatD [doc (showString "/") , prt 0 condexp])
-   CondExpEq condexp -> prPrec i 0 (concatD [doc (showString "=") , prt 0 condexp])
-   CondExpBar condexp -> prPrec i 0 (concatD [doc (showString "|") , prt 0 condexp])
-   CondExpNil  -> prPrec i 0 (concatD [])
-
+    CondExpId id condexp -> prPrec i 0 (concatD [prt 0 id, prt 0 condexp])
+    CondExpSymb symbols condexp -> prPrec i 0 (concatD [prt 0 symbols, prt 0 condexp])
+    CondExpInt n condexp -> prPrec i 0 (concatD [prt 0 n, prt 0 condexp])
+    CondExpDouble d condexp -> prPrec i 0 (concatD [prt 0 d, prt 0 condexp])
+    CondExpTimes condexp -> prPrec i 0 (concatD [doc (showString "*"), prt 0 condexp])
+    CondExpParent condexp1 condexp2 -> prPrec i 0 (concatD [doc (showString "("), prt 0 condexp1, doc (showString ")"), prt 0 condexp2])
+    CondExpDot condexp -> prPrec i 0 (concatD [doc (showString "."), prt 0 condexp])
+    CondExpCorchete condexp1 condexp2 -> prPrec i 0 (concatD [doc (showString "["), prt 0 condexp1, doc (showString "]"), prt 0 condexp2])
+    CondExpComma condexp -> prPrec i 0 (concatD [doc (showString ","), prt 0 condexp])
+    CondExpSlash condexp -> prPrec i 0 (concatD [doc (showString "/"), prt 0 condexp])
+    CondExpEq condexp -> prPrec i 0 (concatD [doc (showString "="), prt 0 condexp])
+    CondExpBar condexp -> prPrec i 0 (concatD [doc (showString "||"), prt 0 condexp])
+    CondExpNil -> prPrec i 0 (concatD [])
 
 instance Print VarExp where
   prt i e = case e of
-   VarExpId id varexp -> prPrec i 0 (concatD [prt 0 id , prt 0 varexp])
-   VarExpSymb symbols varexp -> prPrec i 0 (concatD [prt 0 symbols , prt 0 varexp])
-   VarExpInt n varexp -> prPrec i 0 (concatD [prt 0 n , prt 0 varexp])
-   VarExpDouble d varexp -> prPrec i 0 (concatD [prt 0 d , prt 0 varexp])
-   VarExpTimes varexp -> prPrec i 0 (concatD [doc (showString "*") , prt 0 varexp])
-   VarExpParent varexp0 varexp -> prPrec i 0 (concatD [doc (showString "(") , prt 0 varexp0 , doc (showString ")") , prt 0 varexp])
-   VarExpBrack varexp0 varexp -> prPrec i 0 (concatD [doc (showString "{") , prt 0 varexp0 , doc (showString "}") , prt 0 varexp])
-   VarExpDot varexp -> prPrec i 0 (concatD [doc (showString ".") , prt 0 varexp])
-   VarExpComma varexp -> prPrec i 0 (concatD [doc (showString ",") , prt 0 varexp])
-   VarExpCorchete varexp0 varexp -> prPrec i 0 (concatD [doc (showString "[") , prt 0 varexp0 , doc (showString "]") , prt 0 varexp])
-   VarExpSlash varexp -> prPrec i 0 (concatD [doc (showString "/") , prt 0 varexp])
-   VarExpBar varexp -> prPrec i 0 (concatD [doc (showString "|") , prt 0 varexp])
-   VarExpNil  -> prPrec i 0 (concatD [])
-
+    VarExpId id varexp -> prPrec i 0 (concatD [prt 0 id, prt 0 varexp])
+    VarExpSymb symbols varexp -> prPrec i 0 (concatD [prt 0 symbols, prt 0 varexp])
+    VarExpInt n varexp -> prPrec i 0 (concatD [prt 0 n, prt 0 varexp])
+    VarExpDouble d varexp -> prPrec i 0 (concatD [prt 0 d, prt 0 varexp])
+    VarExpTimes varexp -> prPrec i 0 (concatD [doc (showString "*"), prt 0 varexp])
+    VarExpParent varexp1 varexp2 -> prPrec i 0 (concatD [doc (showString "("), prt 0 varexp1, doc (showString ")"), prt 0 varexp2])
+    VarExpBrack varexp1 varexp2 -> prPrec i 0 (concatD [doc (showString "{"), prt 0 varexp1, doc (showString "}"), prt 0 varexp2])
+    VarExpDot varexp -> prPrec i 0 (concatD [doc (showString "."), prt 0 varexp])
+    VarExpComma varexp -> prPrec i 0 (concatD [doc (showString ","), prt 0 varexp])
+    VarExpCorchete varexp1 varexp2 -> prPrec i 0 (concatD [doc (showString "["), prt 0 varexp1, doc (showString "]"), prt 0 varexp2])
+    VarExpSlash varexp -> prPrec i 0 (concatD [doc (showString "/"), prt 0 varexp])
+    VarExpBar varexp -> prPrec i 0 (concatD [doc (showString "|"), prt 0 varexp])
+    VarExpNil -> prPrec i 0 (concatD [])
 
 instance Print Expressions where
   prt i e = case e of
-   ExpId id expressions -> prPrec i 0 (concatD [prt 0 id , prt 0 expressions])
-   ExpSymb symbols expressions -> prPrec i 0 (concatD [prt 0 symbols , prt 0 expressions])
-   ExpInt n expressions -> prPrec i 0 (concatD [prt 0 n , prt 0 expressions])
-   ExpDouble d expressions -> prPrec i 0 (concatD [prt 0 d , prt 0 expressions])
-   ExpTimes expressions -> prPrec i 0 (concatD [doc (showString "*") , prt 0 expressions])
-   ExpDot expressions -> prPrec i 0 (concatD [doc (showString ".") , prt 0 expressions])
-   ExpBrack expressions0 expressions -> prPrec i 0 (concatD [doc (showString "{") , prt 0 expressions0 , doc (showString "}") , prt 0 expressions])
-   ExpParent expressions0 expressions -> prPrec i 0 (concatD [doc (showString "(") , prt 0 expressions0 , doc (showString ")") , prt 0 expressions])
-   ExpCorchete expressions0 expressions -> prPrec i 0 (concatD [doc (showString "[") , prt 0 expressions0 , doc (showString "]") , prt 0 expressions])
-   ExpEq expressions -> prPrec i 0 (concatD [doc (showString "=") , prt 0 expressions])
-   ExpSemiColon expressions -> prPrec i 0 (concatD [doc (showString ";") , prt 0 expressions])
-   ExpBSlash expressions -> prPrec i 0 (concatD [doc (showString "\\") , prt 0 expressions])
-   ExpComma expressions -> prPrec i 0 (concatD [doc (showString ",") , prt 0 expressions])
-   ExpSlash expressions -> prPrec i 0 (concatD [doc (showString "/") , prt 0 expressions])
-   ExpBar expressions -> prPrec i 0 (concatD [doc (showString "|") , prt 0 expressions])
-   ExpNil  -> prPrec i 0 (concatD [])
-
+    ExpId id expressions -> prPrec i 0 (concatD [prt 0 id, prt 0 expressions])
+    ExpSymb symbols expressions -> prPrec i 0 (concatD [prt 0 symbols, prt 0 expressions])
+    ExpInt n expressions -> prPrec i 0 (concatD [prt 0 n, prt 0 expressions])
+    ExpDouble d expressions -> prPrec i 0 (concatD [prt 0 d, prt 0 expressions])
+    ExpTimes expressions -> prPrec i 0 (concatD [doc (showString "*"), prt 0 expressions])
+    ExpDot expressions -> prPrec i 0 (concatD [doc (showString "."), prt 0 expressions])
+    ExpBrack expressions1 expressions2 -> prPrec i 0 (concatD [doc (showString "{"), prt 0 expressions1, doc (showString "}"), prt 0 expressions2])
+    ExpParent expressions1 expressions2 -> prPrec i 0 (concatD [doc (showString "("), prt 0 expressions1, doc (showString ")"), prt 0 expressions2])
+    ExpCorchete expressions1 expressions2 -> prPrec i 0 (concatD [doc (showString "["), prt 0 expressions1, doc (showString "]"), prt 0 expressions2])
+    ExpEq expressions -> prPrec i 0 (concatD [doc (showString "="), prt 0 expressions])
+    ExpSemiColon expressions -> prPrec i 0 (concatD [doc (showString ";"), prt 0 expressions])
+    ExpBSlash expressions -> prPrec i 0 (concatD [doc (showString "\\"), prt 0 expressions])
+    ExpComma expressions -> prPrec i 0 (concatD [doc (showString ","), prt 0 expressions])
+    ExpSlash expressions -> prPrec i 0 (concatD [doc (showString "/"), prt 0 expressions])
+    ExpBar expressions -> prPrec i 0 (concatD [doc (showString "||"), prt 0 expressions])
+    ExpNil -> prPrec i 0 (concatD [])
 
 instance Print Java where
   prt i e = case e of
-   Java expressions -> prPrec i 0 (concatD [prt 0 expressions])
-
+    Java expressions -> prPrec i 0 (concatD [prt 0 expressions])
 
 instance Print JML where
   prt i e = case e of
-   JML expressions -> prPrec i 0 (concatD [prt 0 expressions])
-
-
-
+    JML expressions -> prPrec i 0 (concatD [prt 0 expressions])

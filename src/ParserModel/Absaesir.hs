@@ -10,7 +10,7 @@ module ParserModel.Absaesir where
 newtype Id = Id String deriving (Eq, Ord, Show, Read)
 newtype Symbols = Symbols String deriving (Eq, Ord, Show, Read)
 data AbsModel
-    = AbsModel Imports Model Templates CInvariants IProp Methods
+    = AbsModel Imports Model Templates CInvariants Assignables IProp Methods
   deriving (Eq, Ord, Show, Read)
 
 data Imports = Imports [Import] | ImportsNil
@@ -156,6 +156,12 @@ data CInvariants = CInvariants [CInvariant] | CInvempty
 data CInvariant = CI Id JML
   deriving (Eq, Ord, Show, Read)
 
+data Assignables = Assignables [Assignable] | AssNil
+  deriving (Eq, Ord, Show, Read)
+
+data Assignable = Ass Id Id [Id]
+  deriving (Eq, Ord, Show, Read)
+
 data IProp = IProp Id JML
   deriving (Eq, Ord, Show, Read)
 
@@ -254,4 +260,3 @@ data Java = Java Expressions
 
 data JML = JML Expressions
   deriving (Eq, Ord, Show, Read)
-

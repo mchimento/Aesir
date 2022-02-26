@@ -2,7 +2,7 @@
 -- Model Grammar --
 -------------------
 
-AbsModel. AbsModel ::= Imports Model Templates CInvariants IProp Methods ;
+AbsModel. AbsModel ::= Imports Model Templates CInvariants Assignables IProp Methods ;
 
 ---------------------
 -- Section IMPORTS --
@@ -168,6 +168,16 @@ CInvempty. CInvariants ::= ;
 separator nonempty CInvariant "" ;
 
 CI. CInvariant ::= Id "{" JML "}" ;
+
+-------------------------
+-- Section Assignables --
+-------------------------
+
+Assignables. Assignables ::= "ASSIGNABLES" "{" [Assignable] "}" ;
+AssNil. Assignables ::= ;
+separator nonempty Assignable "" ;
+
+Ass. Assignable ::= Id "." Id "{" [Id] "}" ;
 
 ------------------------------
 -- Section Initial Property --

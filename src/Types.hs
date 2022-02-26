@@ -20,6 +20,7 @@ data CModel = CModel
   , _modelGet       :: Model
   , _templatesGet   :: Templates
   , _cinvariantsGet :: CInvariants
+  , _assignableGet  :: TAssignables
   , _initpropGet    :: IProp
   , _methodsGet     :: Methods
   } deriving (Show, Eq)
@@ -509,6 +510,16 @@ updateMethodCallBody :: TriggerDef -> [Bind] -> TriggerDef
 updateMethodCallBody (TriggerDef e arg cpes wc) bs = TriggerDef e arg (updateCpeMethodCallBody cpes bs) wc
 
 type Triggers = [TriggerDef]
+
+-----------------
+-- Assignables --
+-----------------
+
+data TAssignables = TAssignables [Ass] | AssNil
+  deriving (Eq, Show)
+
+data Ass = Ass Id Id [Id]
+  deriving (Eq, Show)
 
 -----------------------
 -- XML related types --
