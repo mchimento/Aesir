@@ -28,7 +28,8 @@ computeBRT cm mp iter st jpath out_add =
     let model   = getValue cm
     let trs     = allTriggers $ getEnvVal cm
     let initial = (head $ getStarting $ pStates (model ^. modelGet ^. ctxtGet ^. property)) ^. getNS
-    let root = BRT Nothing [] initial st (getJMLEprop $ model ^. initpropGet)
+    let phi     = getJMLEprop $ model ^. initpropGet
+    let root = BRT Nothing [] initial st phi
                    Nothing iter (getIdIprop $ model ^. initpropGet) [] Map.empty []
     if initial == st
     then return root
@@ -147,6 +148,9 @@ makeNodesEP node trs ht tr n (ep:eps) =
            (makeLoop node (fromState tr)) (fromState tr:(node ^. path))
        : makeNodesEP node trs ht tr (n+1) eps
 
+makeCond :: EPath -> JMLExp
+makeCond ep = removeDLstrContent $ addParenthesisNot $ removeSelf $ pathCondition ep
+
 makeLoop :: BRT -> NameState -> Map.Map Loop Integer
 makeLoop node nm =
   if elem nm (node ^. visited)
@@ -161,9 +165,6 @@ updLoop node nm =
   in case Map.lookup ps mp of
        Nothing -> Map.insert ps 1 mp
        Just n  -> Map.insert ps (n+1) mp
-
-makeCond :: EPath -> JMLExp
-makeCond ep = removeDLstrContent $ addParenthesisNot $ removeSelf $ pathCondition ep
 
 --TODO:When model variables can be handled replace 'ys' by 'tiBinds tinf'
 makeMethod :: [TriggersInfo] -> Transition -> Maybe (MethodName, [Bind], ClassInfo)
@@ -240,7 +241,6 @@ mkHTass (Ass cl m ass) =
     , _path2it    = ""
     , _varThis    = ("","")
     }
-
 
 -------------
 -- Run KeY --

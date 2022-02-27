@@ -1,15 +1,13 @@
 module DL2JML where
 
-import Types
 import CommonFunctions
-
 
 -------------
 -- ! (not) --
 -------------
 
 addParenthesisNot :: String -> String
-addParenthesisNot s = 
+addParenthesisNot s =
  let xs = splitOnIdentifier "&&" s
  in if (length xs > 1)
     then joinAnds $ map (addParenthesis.trim) xs
@@ -17,7 +15,7 @@ addParenthesisNot s =
 
 addParenthesis :: String -> String
 addParenthesis []       = ""
-addParenthesis s@(c:cs) = 
+addParenthesis s@(c:cs) =
  if (c == '!')
  then "!(" ++ cs ++ ")"
  else s
@@ -46,7 +44,6 @@ replaceSelfWith with s = let xs = splitOnIdentifier "self" s
 removeDLstrContent :: String -> String
 removeDLstrContent s =
  let xs = splitOnIdentifier "\\dl_strContent(" s
- in if length xs == 1 
-    then s 
+ in if length xs == 1
+    then s
     else concat $ head xs:map (uncurry (++).splitAtClosingParen 0) (tail xs)
-

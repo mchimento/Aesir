@@ -602,18 +602,21 @@ data TraceCondition =
     deriving (Eq)
 
 instance Show TraceCondition where
- show (TC prop patt) = prop ++ " * <<" ++ showPatternElem patt ++ ">>"
+ show (TC prop patt) = show prop ++ " * <<" ++ showPatternElem patt ++ ">>"
 
 showPatternElem :: [Maybe (MethodName, [Bind],ClassInfo)] -> String
-showPatternElem []      = ""
-showPatternElem xs      = intercalate "," (map showElem xs)
+showPatternElem xs = intercalate "," (map showElem xs)
 
 showElem :: Maybe (MethodName, [Bind],ClassInfo) -> String
 showElem x =
   case x of
     Nothing          -> ""
     Just (m,args,cl) -> "(" ++ cl ++ "." ++ m ++ ","
-                        ++ intercalate "," (map (\ x -> getArgsId (bindToArgs x)) args) ++ ")"
+                        ++ noArgs (intercalate "," (map (\ x -> getArgsId (bindToArgs x)) args)) ++ ")"
+
+noArgs :: String -> String
+noArgs "" = "()"
+noArgs s  = s
 
 type TraceConditions = [TraceCondition]
 

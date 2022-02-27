@@ -125,7 +125,7 @@ run flags stToReach iter java_fn_add model_fn output_add =
                                                        then putStrLn "Error: Reachability analysis has failed.\n"
                                                        else do putStrLn "Reachability analysis... [DONE]\nBackwards reachability tree computation..."
                                                                brt <- computeBRT model' reachMap iter stToReach java_fn_add output_add'
-                                                               tcInference brt stToReach
+                                                               tcInference brt stToReach output_add'
                                                                --removeDirectoryRecursive (output_add' ++ "workspace")
                                                                putStrLn "Aesir has finished successfully.\n"
                                                else putStrLn $ "Error: Argument " ++ stToReach
