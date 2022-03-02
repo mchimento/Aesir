@@ -342,7 +342,7 @@ data Arrow = Arrow
   , precond  :: Cond
   , postcond :: Cond
   , action   :: Action
-  } deriving (Eq,Read)
+  } deriving (Eq,Read,Ord)
 
 instance Show Arrow where
  show (Arrow tr pre post act) = " [" ++ tr ++ " \\ "  ++ pre ++ " \\ " ++ post ++ " \\ " ++ (concat.lines) act ++ " ]"
@@ -351,7 +351,7 @@ data Transition = Transition
   { fromState :: NameState
   , arrow :: Arrow
   , toState :: NameState
-  } deriving (Eq,Read)
+  } deriving (Eq,Read,Ord)
 
 instance Show Transition where
  show (Transition fns arr tns) = fns ++ " -> " ++ tns ++ show arr

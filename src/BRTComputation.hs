@@ -30,17 +30,18 @@ computeBRT cm mp iter st jpath out_add =
     let initial = (head $ getStarting $ pStates (model ^. modelGet ^. ctxtGet ^. property)) ^. getNS
     let phi     = getJMLEprop $ model ^. initpropGet
     let root = BRT Nothing [] initial st phi
-                   Nothing iter (getIdIprop $ model ^. initpropGet) [] Map.empty []
+                   Nothing iter (getIdIprop $ model ^. initpropGet) [st] Map.empty [(st,Nothing)]
     if initial == st
     then return root
     else do createDirectoryIfMissing False toAnalyse_add
             copyFiles jpath toAnalyse_add
             injectJMLinitial cm toAnalyse_add
+            let mp' = makeIDtrsMap $ removeDuplicates $ concatMap snd (Map.toList mp)
             case model ^. assignableGet of
-               AssNil           -> brt cm root mp iter trs out_add
+               AssNil           -> brt cm root mp iter trs mp' out_add
                TAssignables ass -> do let hts = map mkHTass ass
                                       injectJMLannotations cm toAnalyse_add hts
-                                      brt cm root mp iter trs out_add
+                                      brt cm root mp iter trs mp' out_add
 
 --------------------------------------------------------
 -- Backwards reachability tree computation iterations --
@@ -49,70 +50,71 @@ computeBRT cm mp iter st jpath out_add =
 --TODO: Cannot handle the use of model variables in the preconditions
 --TODO: Cannot handle different methods with the same names, i.e., methods overriding
 brt :: UpgradeModel CModel -> BRT -> Map.Map NameState Transitions -> Integer ->
-       [TriggersInfo] -> FilePath -> IO BRT
-brt cm node rt iter trs out_add =
+       [TriggersInfo] -> Map.Map Transition Bits -> FilePath -> IO BRT
+brt cm node rt iter trs mp out_add =
  do let candidates = Map.lookup (node ^. current) rt
     if isJust candidates
-    then do let reachable = filterNodes node (fromJust candidates)
-            child  <- brt_iter cm node trs reachable out_add
-            child' <- sequence $ map (\t -> brt cm t rt iter trs out_add) child
+    then do let reachable = filterNodes node mp (fromJust candidates)
+            child  <- brt_iter cm node trs reachable mp out_add
+            child' <- sequence $ map (\t -> brt cm t rt iter trs mp out_add) child
             return $ (children .~ child' $ node)
     else do putStrLn $ "Aesir: Error when computing reachability for the state "
                        ++ show (node ^. current) ++ "."
             return BNil
 
 --Computes the children of a BRT
-brt_iter :: UpgradeModel CModel -> BRT -> [TriggersInfo] -> [Transition] -> FilePath -> IO [BRT]
-brt_iter cm _ trs [] out_add    = return []
-brt_iter cm node trs ts out_add =
+brt_iter :: UpgradeModel CModel -> BRT -> [TriggersInfo] -> [Transition]
+            -> Map.Map Transition Bits -> FilePath -> IO [BRT]
+brt_iter cm _ trs [] _ out_add     = return []
+brt_iter cm node trs ts mp out_add =
   do let toAnalyse_add = out_add ++ "workspace/files2analyse"
      let hinfo         = htInfo trs node ts
      let hts           = map fst hinfo
      injectJMLannotations cm toAnalyse_add hts
      runKeY toAnalyse_add (out_add++"workspace/")
      setDummyVarsFalse cm toAnalyse_add hts
-     nodes <- newNodes node (out_add++"workspace/") hinfo trs
+     nodes <- newNodes node (out_add++"workspace/") hinfo mp trs
      return nodes
 
 --Filter transitions which would violate the allowed amount of loop iterations
-filterNodes :: BRT -> Transitions -> Transitions
-filterNodes node []       = []
-filterNodes node (tr:trs) =
+filterNodes :: BRT -> Map.Map Transition Bits -> Transitions -> Transitions
+filterNodes _ _ []           = []
+filterNodes node mp (tr:trs) =
  let si = fromState tr in
  let vs = node ^. visited
  in if (elem si vs)
-    then let p = node ^. path
-         in if checkLoop node si
-            then filterNodes node trs
-            else tr : filterNodes node trs
-    else tr : filterNodes node trs
+    then if checkLoop node mp tr
+         then filterNodes node mp trs
+         else tr : filterNodes node mp trs
+    else tr : filterNodes node mp trs
 
 --Check if the allowed amount of loop iterations is violated
-checkLoop :: BRT -> NameState -> Bool
-checkLoop node nm =
-  let (xs,ys) = splitAtState nm (node ^. path) in
-  let ps = concat (nm:xs) in
-  let mp = node ^. loops
-  in case Map.lookup ps mp of
+checkLoop :: BRT -> Map.Map Transition Bits -> Transition -> Bool
+checkLoop node mp tr =
+  let (xs,ys) = splitAtState (fromState tr) (node ^. path) in
+  let id = makeIDtrs (tr:map (fromJust.snd) (init xs)) mp in
+  let mp' = node ^. loops
+  in case Map.lookup id mp' of
         Nothing -> False
         Just n  -> (_iter node) < (n+1)
 
-splitAtState :: NameState -> [NameState] -> ([NameState],[NameState])
+splitAtState :: NameState -> [(NameState,Maybe Transition)]
+                -> ([(NameState,Maybe Transition)],[(NameState,Maybe Transition)])
 splitAtState _ []     = ([],[])
 splitAtState s (x:xs) =
-  if s == x
+  if s == fst x
   then ([x],xs)
   else let (ys,zs) = splitAtState s xs
        in (x:ys,zs)
 
 --Creates to new nodes to add to the computed BRT
-newNodes :: BRT -> FilePath -> [(HT,Transition)] -> [TriggersInfo] -> IO [BRT]
-newNodes node out_add hinfo trs =
+newNodes :: BRT -> FilePath -> [(HT,Transition)] -> Map.Map Transition Bits -> [TriggersInfo] -> IO [BRT]
+newNodes node out_add hinfo mp trs =
   do let file = out_add ++ "out.xml"
      r <- readFile file
      let xml   = ParserXMLKeYOut.parse r
      let xml'  = removeNoneHTs xml (map ((^.htName).fst) hinfo)
-     let child = makeNodes node trs (pairingProofHT xml' hinfo)
+     let child = makeNodes node trs mp (pairingProofHT xml' hinfo)
      return child
 
 htInfo :: [TriggersInfo] -> BRT -> [Transition] -> [(HT,Transition)]
@@ -134,37 +136,57 @@ getHTforProof p ((ht,t):ts) =
      then (p,ht,t)
      else getHTforProof p ts
 
-makeNodes :: BRT -> [TriggersInfo] -> [(Proof,HT,Transition)] -> [BRT]
-makeNodes _ _ []                  = []
-makeNodes node trs ((p,ht,tr):xs) = makeNodesEP node trs ht tr 0 (executionPath p) ++ makeNodes node trs xs
+makeNodes :: BRT -> [TriggersInfo] -> Map.Map Transition Bits -> [(Proof,HT,Transition)] -> [BRT]
+makeNodes _ _ _ []                   = []
+makeNodes node trs mp ((p,ht,tr):xs) = makeNodesEP node trs ht tr 0 mp (executionPath p) ++ makeNodes node trs mp xs
 
-makeNodesEP :: BRT -> [TriggersInfo] -> HT -> Transition -> Int -> [EPath] -> [BRT]
-makeNodesEP _ _ _ _ _ []              = []
-makeNodesEP node trs ht tr n (ep:eps) =
+makeNodesEP :: BRT -> [TriggersInfo] -> HT -> Transition -> Int ->
+               Map.Map Transition Bits -> [EPath] -> [BRT]
+makeNodesEP _ _ _ _ _ _ []               = []
+makeNodesEP node trs ht tr n mp (ep:eps) =
   if (verified ep) == "false"
-  then makeNodesEP node trs ht tr n eps
+  then makeNodesEP node trs ht tr n mp eps
   else BRT (Just node) [] (node^.initial) (fromState tr) (makeCond ep) (makeMethod trs tr)
-           (_iter node) (ht^.htName ++ show n) (fromState tr:(node ^. visited))
-           (makeLoop node (fromState tr)) (fromState tr:(node ^. path))
-       : makeNodesEP node trs ht tr (n+1) eps
+           (_iter node) (ht^.htName ++ show n) (makeVisited tr node)
+           (makeLoop node tr mp) (makePath tr node)
+       : makeNodesEP node trs ht tr (n+1) mp eps
 
 makeCond :: EPath -> JMLExp
 makeCond ep = removeDLstrContent $ addParenthesisNot $ removeSelf $ pathCondition ep
 
-makeLoop :: BRT -> NameState -> Map.Map Loop Integer
-makeLoop node nm =
-  if elem nm (node ^. visited)
-  then updLoop node nm
+makeVisited :: Transition -> BRT -> [NameState]
+makeVisited tr node =
+  let nm = fromState tr in
+  let ps = (node ^. path)
+  in if elem nm (node ^. visited)
+     then let (xs,ys) = splitAtState nm ps in
+          let xs'     = map fst xs
+          in nm : [ s | s <- (node ^. visited), not (elem s xs')]
+     else nm : (node ^. visited)
+
+makePath :: Transition -> BRT -> [(NameState,Maybe Transition)]
+makePath tr node =
+  let nm = fromState tr in
+  let ps = node ^. path
+  in if elem nm (node ^. visited)
+     then let (xs,ys) = splitAtState nm ps
+          in (nm,Just tr):ys
+     else (nm,Just tr):ps
+
+makeLoop :: BRT -> Transition -> Map.Map Transition Bits -> Map.Map Loop Integer
+makeLoop node tr mp =
+  if elem (fromState tr) (node ^. visited)
+  then updLoop node tr mp
   else node ^. loops
 
-updLoop :: BRT -> NameState -> Map.Map Loop Integer
-updLoop node nm =
-  let (xs,ys) = splitAtState nm (node ^. path) in
-  let ps = concat (nm:xs) in
-  let mp = node ^. loops
-  in case Map.lookup ps mp of
-       Nothing -> Map.insert ps 1 mp
-       Just n  -> Map.insert ps (n+1) mp
+updLoop :: BRT -> Transition -> Map.Map Transition Bits -> Map.Map Loop Integer
+updLoop node tr mp =
+  let (xs,ys) = splitAtState (fromState tr) (node ^. path) in
+  let mp' = node ^. loops in
+  let id = makeIDtrs (tr:map (fromJust.snd) (init xs)) mp
+  in case Map.lookup id mp' of
+       Nothing -> Map.insert id 1 mp'
+       Just n  -> Map.insert id (n+1) mp'
 
 --TODO:When model variables can be handled replace 'ys' by 'tiBinds tinf'
 makeMethod :: [TriggersInfo] -> Transition -> Maybe (MethodName, [Bind], ClassInfo)
@@ -241,6 +263,60 @@ mkHTass (Ass cl m ass) =
     , _path2it    = ""
     , _varThis    = ("","")
     }
+
+------------------------------------------------------
+-- Mapping associating transitions with a unique ID --
+------------------------------------------------------
+
+data Bit = One | Zero deriving(Eq)
+
+instance Show Bit where
+  show One  = "1"
+  show Zero = "0"
+
+addBit :: Bit -> Bit -> Bit
+addBit One Zero  = One
+addBit One One   = Zero
+addBit Zero One  = One
+addBit Zero Zero = Zero
+
+type Bits = [Bit]
+
+addBits :: Bits -> Bits -> Bits
+addBits xs [] = xs
+addBits xs ys = map (uncurry addBit) (zip xs ys)
+
+makeIDtrs :: Transitions -> Map.Map Transition Bits -> String
+makeIDtrs trs mp = concatMap show $ foldr (\x xs -> addBits x xs) [] (getBits trs mp)
+
+getBits :: Transitions -> Map.Map Transition Bits -> [Bits]
+getBits [] _        = []
+getBits (tr:trs) mp =
+  case Map.lookup tr mp of
+    Nothing -> getBits trs mp
+    Just x  -> x : getBits trs mp
+
+makeIDtrsMap :: Transitions -> Map.Map Transition Bits
+makeIDtrsMap [] = Map.empty
+makeIDtrsMap xs =
+  let ys = replicate (length xs) Zero in
+  Map.fromList $ zip xs (generateIDs (length ys) ys)
+
+generateIDs :: Int -> Bits -> [Bits]
+generateIDs 0 _    = []
+generateIDs n bits = makeIDtr (n-1) bits : generateIDs (n-1) bits
+
+makeIDtr :: Int -> Bits -> Bits
+makeIDtr n = modifyAt n (addBit One)
+
+modifyAt :: Int -> (a -> a) -> [a] -> [a]
+modifyAt i f ls
+  | i < 0 = ls
+  | otherwise = go i ls
+  where
+    go 0 (x:xs) = f x : xs
+    go n (x:xs) = x : go (n-1) xs
+    go _ []     = []
 
 -------------
 -- Run KeY --

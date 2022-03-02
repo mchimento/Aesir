@@ -21,7 +21,7 @@ data BRT = BRT
  , _idBrt     :: String --Node identifier
  , _visited   :: [NameState] -- List of visited states
  , _loops     :: Map.Map Loop Integer -- Map to keep track of the amounts of iterations a loop has performed
- , _path      :: [NameState] -- Path followed through the BRT (from current node to root)
+ , _path      :: [(NameState,Maybe Transition)] -- Path followed through the BRT (from current node to root)
  } | BNil deriving (Eq,Show)
 
 type Loop = String

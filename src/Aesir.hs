@@ -126,7 +126,7 @@ run flags stToReach iter java_fn_add model_fn output_add =
                                                        else do putStrLn "Reachability analysis... [DONE]\nBackwards reachability tree computation..."
                                                                brt <- computeBRT model' reachMap iter stToReach java_fn_add output_add'
                                                                tcInference brt stToReach output_add'
-                                                               --removeDirectoryRecursive (output_add' ++ "workspace")
+                                                               removeDirectoryRecursive (output_add' ++ "workspace")
                                                                putStrLn "Aesir has finished successfully.\n"
                                                else putStrLn $ "Error: Argument " ++ stToReach
                                                                 ++ " is not a state of the model.\n"

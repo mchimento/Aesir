@@ -56,6 +56,7 @@ ASSIGNABLES {
  UserAccount.withdraw { balance }
  ArrayAccounts.getAccount { NOTHING }
  ArraySessions.getSession { NOTHING } 
+ ArraySessions.add { size }
 }
 
 INITPROP init { (\forall int i ; i >= 0 && i < accounts.size ; accounts.set[i].balance >= 0) }

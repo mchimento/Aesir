@@ -1,11 +1,11 @@
 package transactionsystem;
 
 public class ArrayAccounts {
-    static final protected /*@ spec_public @*/ int Max_Accounts = 20;
+    static final protected int Max_Accounts = 20;
 
-    protected /*@ spec_public @*/ UserAccount[] set;
+    protected UserAccount[] set;
 
-    protected /*@ spec_public @*/ int size;
+    protected int size;
 
     ArrayAccounts(){
         set = new UserAccount[Max_Accounts];

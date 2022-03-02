@@ -8,14 +8,19 @@ import Types
 import CommonFunctions
 
 tcInference :: BRT -> NameState -> FilePath -> IO ()
+tcInference BNil _ _            =
+  do putStrLn "Trace condition inference... \n"
+     putStrLn "An empty Backwards Reachability Tree was computed"
+     putStrLn "Trace condition inference... [Aborted]\n"
 tcInference t stToReach out_add =
   if null (t ^. children)
   then do putStrLn "Trace condition inference... \n"
           putStrLn "Amount of trace conditions generated: 1"
           putStrLn (show (TC "true" []))
+          xmlOutTC [TC "true" []] out_add
           putStrLn "Trace condition inference... [DONE]\n"
   else do putStrLn "Trace condition inference... \n"
-          let ret = seq2TraceConds $ prune (flattenBRT t) (t ^. initial) stToReach
+          let ret = seq2TraceConds $ prune (flattenBRT t) (t ^. initial)
           putStrLn $ "Amount of trace conditions generated: " ++ show (length ret)
           showAllTraces ret
           xmlOutTC ret out_add
@@ -38,21 +43,16 @@ brt2elem :: BRT -> (NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))
 brt2elem brt = (brt ^. current, brt ^. prop, brt ^. method)
 
 prune :: [[(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]]
-         -> NameState -> NameState -> [[(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]]
-prune [] _ _           = []
-prune (x:xs) start end =
-  if checkForPrune x start end
-  then prune xs start end
-  else x : prune xs start end
+         -> NameState -> [[(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]]
+prune [] _           = []
+prune (xs:xss) start = prune_ xs start : prune xss start
 
-checkForPrune :: [(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]
-                 -> NameState -> NameState -> Bool
-checkForPrune [] _ _              = True
-checkForPrune [(x,_,_)] start end = not (x == start && x == end)
-checkForPrune xs start end =
-  let hd = (\(x,_,_) -> x) (head xs) in
-  let tl = (\(x,_,_) -> x) (last xs)
-  in not (start == hd && end == tl)
+prune_ :: [(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]
+         -> NameState -> [(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]
+prune_ [] _      = []
+prune_ (x:xs) nm = if (\(y,_,_) -> y) x == nm
+                   then x:xs
+                   else prune_ xs nm
 
 seq2TraceConds :: [[(NameState,JMLExp,Maybe (MethodName, [Bind],ClassInfo))]] -> TraceConditions
 seq2TraceConds []       = []

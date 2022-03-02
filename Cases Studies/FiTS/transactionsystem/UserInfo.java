@@ -3,6 +3,8 @@ package transactionsystem;
 import transactionsystem.UserSession;
 
 public class UserInfo {
+
+
 	protected enum UserMode {
 		ACTIVE, DISABLED, FROZEN;
 	}
@@ -15,16 +17,16 @@ public class UserInfo {
 		GOLD, SILVER, NORMAL
 	}
 	
-	protected /*@ spec_public @*/ Integer uid;
-	protected /*@ spec_public @*/ String name;
-	protected /*@ spec_public @*/ UserMode mode;
-	protected /*@ spec_public @*/ UserStatus status;
-	protected /*@ spec_public @*/ UserType type;
-	protected /*@ spec_public @*/ ArraySessions sessions;
-	protected /*@ spec_public @*/ ArrayAccounts accounts;
-	protected /*@ spec_public @*/ int next_session_id;
-	protected /*@ spec_public @*/ int next_account;
-	protected /*@ spec_public @*/ String country;
+	protected Integer uid;
+	protected String name;
+	protected UserMode mode;
+	protected UserStatus status;
+	protected UserType type;
+	protected ArraySessions sessions;
+	protected ArrayAccounts accounts;
+	protected int next_session_id;
+	protected int next_account;
+	protected String country;
 	
 	public UserInfo(Integer uid, String name, String country) {
 		this.uid = uid;
@@ -139,7 +141,6 @@ public class UserInfo {
 	}
 
 	// Accounts
-
 	public UserAccount getAccount(String account_number)
 	{
 		return accounts.getAccount(account_number);
@@ -160,19 +161,16 @@ public class UserInfo {
 		a.closeAccount();
 	}
 
-	public void withdrawFrom(String account_number, int amount)
+	public void withdrawFrom(String acc_nr_wf, int amount_wf)
 	{
-                UserAccount acc = getAccount(account_number) ;
+                UserAccount acc = getAccount(acc_nr_wf) ;
                 if (acc != null)
-		    acc.withdraw(amount);
+		    acc.withdraw(amount_wf);
 	}
 
-//if this precondition is used 'getAccount(account_number) != null', then
-//KeY gets stuck in the loop invariant
-
-	public void depositTo(String account_number, int amount)
-	{       UserAccount acc = getAccount(account_number) ;
+	public void depositTo(String acc_nr_dt, int amount_dt)
+	{       UserAccount acc = getAccount(acc_nr_dt) ;
                 if (acc != null)
-                    acc.deposit(amount);
+                    acc.deposit(amount_dt);
 	}
 }
