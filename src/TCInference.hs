@@ -9,17 +9,18 @@ import CommonFunctions
 
 tcInference :: BRT -> NameState -> FilePath -> IO ()
 tcInference BNil _ _            =
-  do putStrLn "Trace condition inference... \n"
-     putStrLn "An empty Backwards Reachability Tree was computed"
+  do putStrLn "An empty Backwards Reachability Tree was computed"
      putStrLn "Trace condition inference... [Aborted]\n"
 tcInference t stToReach out_add =
   if null (t ^. children)
-  then do putStrLn "Trace condition inference... \n"
+  then do putStrLn "Backwards reachability tree computation... [DONE]"
+          putStrLn "Trace condition inference... \n"
           putStrLn "Amount of trace conditions generated: 1"
           putStrLn (show (TC "true" []))
           xmlOutTC [TC "true" []] out_add
           putStrLn "Trace condition inference... [DONE]\n"
-  else do putStrLn "Trace condition inference... \n"
+  else do putStrLn "Backwards reachability tree computation... [DONE]"
+          putStrLn "Trace condition inference... \n"
           let ret = seq2TraceConds $ prune (flattenBRT t) (t ^. initial)
           putStrLn $ "Amount of trace conditions generated: " ++ show (length ret)
           showAllTraces ret

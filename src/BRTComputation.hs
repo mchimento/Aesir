@@ -52,7 +52,8 @@ computeBRT cm mp iter st jpath out_add =
 brt :: UpgradeModel CModel -> BRT -> Map.Map NameState Transitions -> Integer ->
        [TriggersInfo] -> Map.Map Transition Bits -> FilePath -> IO BRT
 brt cm node rt iter trs mp out_add =
- do let candidates = Map.lookup (node ^. current) rt
+ do putStrLn $ "\nAnalysing node " ++ node ^. idBrt ++ ":\n"
+    let candidates = Map.lookup (node ^. current) rt
     if isJust candidates
     then do let reachable = filterNodes node mp (fromJust candidates)
             child  <- brt_iter cm node trs reachable mp out_add
@@ -70,6 +71,7 @@ brt_iter cm node trs ts mp out_add =
   do let toAnalyse_add = out_add ++ "workspace/files2analyse"
      let hinfo         = htInfo trs node ts
      let hts           = map fst hinfo
+     putStrLn "Generating Hoare triples... "
      injectJMLannotations cm toAnalyse_add hts
      runKeY toAnalyse_add (out_add++"workspace/")
      setDummyVarsFalse cm toAnalyse_add hts
